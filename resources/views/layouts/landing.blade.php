@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ config('app.name', 'Adamawa Export Market') }}</title>
+    <link rel="preconnect" href="https://images.unsplash.com" />
+    <link rel="stylesheet" href="{{ asset('assets/landing.css') }}" />
+    @isset($marketplaceProducts)
+    <script>
+      window.marketplaceProducts = {!! json_encode($marketplaceProducts) !!};
+    </script>
+    @endisset
+    <script src="{{ asset('assets/landing.js') }}" defer></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" async onload="window.lucide && window.lucide.createIcons()"></script>
+    @yield('styles')
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="{{ route('home') }}" aria-label="Adamawa Export Market home">
+        <span class="brand-mark"><img src="{{ asset('assets/logo.png') }}" alt="Adamawa Export Market logo" /></span>
+        <span>
+          <strong>Adamawa Export Market</strong>
+          <small>Verified non-oil trade portal</small>
+        </span>
+      </a>
+
+      <nav class="main-nav" aria-label="Primary navigation">
+        <a href="{{ route('home') }}#exporter">Exporters</a>
+      </nav>
+
+      <div class="top-actions">
+        @auth
+          <a class="btn ghost" href="{{ route('admin.dashboard') }}">Dashboard</a>
+        @else
+          <a class="btn ghost" href="{{ route('register') }}">Register</a>
+          <a class="btn ghost" href="{{ route('login') }}">Login</a>
+        @endauth
+        <a class="btn primary" href="{{ route('home') }}#marketplace">Browse</a>
+      </div>
+    </header>
+
+    <main>
+      @yield('content')
+    </main>
+
+    @yield('scripts')
+  </body>
+</html>

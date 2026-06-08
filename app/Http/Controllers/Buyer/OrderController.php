@@ -1,0 +1,237 @@
+<?php
+
+namespace App\Http\Controllers\Buyer;
+
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\Product;
+use App\Models\BuyerProfile;
+use App\Models\ExporterProfile;
+use App\Models\Settlement;
+use App\Models\Shipment;
+use App\Models\AtexAuditLog;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+
+class OrderController extends Controller
+{
+    public function index()
+    {
+        $user = Auth::user();
+        
+        if ($user->hasRole('super-admin') || $user->hasRole('field-officer')) {
+            $orders = Order::with(['buyerProfile', 'exporterProfile', 'product'])->latest()->get();
+            return view('buyer.orders.admin', compact('orders'));
+        }
+
+        if ($user->hasRole('exporter')) {
+            $profile = ExporterProfile::where('user_id', $user->id)->first();
+            $orders = Order::where('exporter_profile_id', $profile->id ?? 0)->with(['buyerProfile', 'product'])->latest()->get();
+            return view('buyer.orders.exporter', compact('orders'));
+        }
+
+        if ($user->hasRole('buyer')) {
+            $profile = BuyerProfile::where('user_id', $user->id)->first();
+            $orders = Order::where('buyer_profile_id', $profile->id ?? 0)->with(['exporterProfile', 'product'])->latest()->get();
+            return view('buyer.orders.buyer', compact('orders'));
+        }
+
+        if ($user->hasRole('logistics')) {
+            $profile = LogisticsProfile::where('user_id', $user->id)->first();
+            $profileId = $profile->id ?? 0;
+            $orders = Order::whereHas('shipment', function ($query) use ($profileId) {
+                $query->where('logistics_profile_id', $profileId);
+            })->with(['buyerProfile', 'exporterProfile', 'product', 'shipment'])->latest()->get();
+            return view('buyer.orders.logistics', compact('orders'));
+        }
+
+        return redirect()->route('admin.dashboard');
+    }
+
+    public function create(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->hasRole('buyer')) {
+            return redirect()->route('admin.dashboard')->with('error', 'Only buyers can create orders.');
+        }
+
+        $productId = $request->product_id;
+        $product = Product::with('exporterProfile')->findOrFail($productId);
+        
+        return view('buyer.orders.create', compact('product'));
+    }
+
+    public function store(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->hasRole('buyer')) {
+            return redirect()->route('admin.dashboard')->with('error', 'Only buyers can place orders.');
+        }
+
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'order_quantity' => 'required|string|max:100',
+            'destination_location' => 'required|string|max:255',
+            'total_amount' => 'required|numeric|min:1',
+            'currency' => 'required|string|max:10',
+        ]);
+
+        $product = Product::findOrFail($request->product_id);
+        $buyer = BuyerProfile::where('user_id', $user->id)->first();
+        if (!$buyer) {
+            $buyer = BuyerProfile::create([
+                'user_id' => $user->id,
+                'country' => 'Nigeria',
+                'verification_status' => 'approved',
+            ]);
+        }
+
+        $orderNumber = 'AEM-ORD-' . strtoupper(Str::random(6));
+        $totalAmount = $request->total_amount;
+        
+        // Compute commission (10%), tax (7.5%), net payout
+        $commission = round($totalAmount * 0.10, 2);
+        $tax = round($totalAmount * 0.075, 2);
+        $netPayout = round($totalAmount - $commission - $tax, 2);
+
+        $order = Order::create([
+            'order_number' => $orderNumber,
+            'product_id' => $product->id,
+            'buyer_profile_id' => $buyer->id,
+            'exporter_profile_id' => $product->exporter_profile_id,
+            'order_quantity' => $request->order_quantity,
+            'destination_location' => $request->destination_location,
+            'total_amount' => $totalAmount,
+            'currency' => $request->currency,
+            'fulfillment_mode' => $product->fulfillment_mode,
+            'fulfillment_status' => 'pending',
+            'commission_amount' => $commission,
+            'tax_amount' => $tax,
+            'net_payout_amount' => $netPayout,
+            'settlement_status' => 'pending',
+            'payment_status' => 'held',
+            'shipment_status' => 'pending_assignment',
+            'status' => 'created',
+        ]);
+
+        // Create Settlement Record
+        Settlement::create([
+            'order_id' => $order->id,
+            'exporter_profile_id' => $product->exporter_profile_id,
+            'gross_amount' => $totalAmount,
+            'commission_amount' => $commission,
+            'tax_amount' => $tax,
+            'net_payout_amount' => $netPayout,
+            'status' => 'pending',
+        ]);
+
+        // Create Shipment Record
+        Shipment::create([
+            'order_id' => $order->id,
+            'status' => 'pending_assignment',
+            'origin_location' => ($product->origin_lga ?: 'Yola') . ', Adamawa',
+            'destination_location' => $request->destination_location,
+        ]);
+
+        AtexAuditLog::create([
+            'actor_id' => $user->id,
+            'action' => 'placed_order',
+            'auditable_type' => 'order',
+            'auditable_id' => $order->id,
+            'new_values' => json_encode(['order_number' => $orderNumber]),
+            'ip_address' => $request->ip(),
+        ]);
+
+        return redirect()->route('admin.orders.index')->with('success', 'Order placed successfully. Payment is currently in escrow hold.');
+    }
+
+    public function show($id)
+    {
+        $user = Auth::user();
+        $order = Order::with(['buyerProfile.user', 'exporterProfile.user', 'product', 'settlement', 'shipment.logisticsProfile.user'])->findOrFail($id);
+
+        // Security check
+        if ($user->hasRole('exporter')) {
+            $profile = ExporterProfile::where('user_id', $user->id)->first();
+            if ($order->exporter_profile_id !== $profile->id) {
+                abort(403);
+            }
+        } elseif ($user->hasRole('buyer')) {
+            $profile = BuyerProfile::where('user_id', $user->id)->first();
+            if ($order->buyer_profile_id !== $profile->id) {
+                abort(403);
+            }
+        } elseif ($user->hasRole('logistics')) {
+            $profile = LogisticsProfile::where('user_id', $user->id)->first();
+            if ($order->shipment && $order->shipment->logistics_profile_id !== $profile->id) {
+                abort(403);
+            }
+        }
+
+        return view('buyer.orders.show', compact('order', 'user'));
+    }
+
+    public function fulfillment()
+    {
+        $user = Auth::user();
+        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+            abort(403);
+        }
+
+        $orders = Order::where('fulfillment_mode', 'afribidge')
+            ->with(['buyerProfile', 'exporterProfile', 'product', 'shipment.logisticsProfile'])
+            ->latest()
+            ->get();
+        $logistics = LogisticsProfile::where('verification_status', 'approved')->get();
+
+        return view('buyer.fulfillment.index', compact('orders', 'logistics'));
+    }
+
+    public function fulfillmentUpdate(Request $request, $id)
+    {
+        $user = Auth::user();
+        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+            abort(403);
+        }
+
+        $request->validate([
+            'fulfillment_status' => 'required|string|max:30',
+            'shipment_status' => 'required|string|max:30',
+            'status' => 'required|string|max:30',
+        ]);
+
+        $order = Order::findOrFail($id);
+        $oldFulfillmentStatus = $order->fulfillment_status;
+
+        $order->update([
+            'fulfillment_status' => $request->fulfillment_status,
+            'shipment_status' => $request->shipment_status,
+            'status' => $request->status,
+        ]);
+
+        // Sync to shipment status
+        if ($order->shipment) {
+            $order->shipment->update([
+                'status' => $request->shipment_status,
+            ]);
+        }
+
+        AtexAuditLog::create([
+            'actor_id' => $user->id,
+            'action' => 'updated_fulfillment_order',
+            'auditable_type' => 'order',
+            'auditable_id' => $order->id,
+            'old_values' => json_encode(['fulfillment_status' => $oldFulfillmentStatus]),
+            'new_values' => json_encode([
+                'fulfillment_status' => $request->fulfillment_status,
+                'shipment_status' => $request->shipment_status,
+                'status' => $request->status,
+            ]),
+            'ip_address' => $request->ip(),
+        ]);
+
+        return redirect()->route('admin.fulfillment.index')->with('success', 'Fulfillment order status updated successfully.');
+    }
+}
+
