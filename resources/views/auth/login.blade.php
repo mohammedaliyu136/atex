@@ -3,103 +3,128 @@
 @section('title', 'Sign In')
 
 @section('content')
-    <div class="min-h-screen flex items-center justify-center p-4">
-        <div
-            class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl shadow-indigo-100/50 border border-indigo-50/50 p-12 relative overflow-hidden">
+<style>
+    /* Custom specific styles to match Adamawa Export Market perfectly */
+    .login-hero-bg {
+        background: linear-gradient(90deg, rgba(11, 35, 25, 0.92), rgba(11, 35, 25, 0.55)), url("https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=1600&q=80") center/cover;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #0f5132 0%, #1f7a4d 100%);
+        box-shadow: 0 12px 26px rgba(15, 81, 50, 0.2);
+        color: white;
+        transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .btn-primary:hover {
+        transform: translateY(-1px);
+    }
+    .btn-secondary {
+        color: #0f5132;
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid #d7e3da;
+        transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .btn-secondary:hover {
+        transform: translateY(-1px);
+        background: #f8fbf8;
+    }
+    
+    .form-input-custom {
+        border: 1px solid #d7e3da;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+        transition: all 0.2s;
+    }
+    .form-input-custom:focus {
+        border-color: rgba(31, 122, 77, 0.48);
+        box-shadow: 0 0 0 4px rgba(31, 122, 77, 0.1);
+        outline: none;
+    }
+</style>
 
-            <!-- Background Accents -->
-            <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-50 rounded-full blur-3xl opacity-50"></div>
+<div class="min-h-screen flex flex-col lg:grid lg:grid-cols-[1fr_430px]">
+    
+    <!-- Hero Section -->
+    <section class="login-hero-bg flex flex-col justify-end p-8 lg:p-16 xl:p-20 text-white min-h-[320px] lg:min-h-screen">
+        <span class="text-[#c99724] text-xs font-[850] uppercase tracking-wider mb-4 block">Enterprise Application</span>
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-4 max-w-3xl" style="line-height: 0.95;">
+            Verified export trade operations for Adamawa State.
+        </h1>
+        <p class="text-white/80 text-lg max-w-2xl">
+            Manage exporters, products, RFQs, compliance documents, orders, payments, logistics, and audit trails from one role-aware system.
+        </p>
+    </section>
 
-            <div class="relative text-center mb-10">
+    <!-- Login Panel -->
+    <section class="bg-white/98 flex flex-col justify-center p-8 lg:p-10 shadow-[-20px_0_40px_rgba(0,0,0,0.05)] relative z-10">
+        
+        <div class="flex items-center gap-3 mb-8">
+            <div class="flex items-center justify-center w-10 h-10 bg-white border border-[#d7e3da] rounded-lg overflow-hidden shrink-0">
                 @if(!empty($system_settings['platform_logo']))
-                    <img src="{{ $system_settings['platform_logo'] }}" alt="Logo" class="h-12 w-auto mx-auto mb-6">
+                    <img src="{{ $system_settings['platform_logo'] }}" alt="Logo" class="max-w-[28px] max-h-[28px] object-contain">
                 @else
-                    <div
-                        class="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary-500/20 transform -rotate-3">
-                        <span
-                            class="text-white font-black text-2xl">{{ substr($system_settings['platform_name'] ?? 'APP', 0, 2) }}</span>
-                    </div>
+                    <span class="text-[#0f5132] font-black text-xl">{{ substr($system_settings['platform_name'] ?? 'APP', 0, 1) }}</span>
                 @endif
-                <h2 class="text-3xl font-black text-slate-800 mb-2 tracking-tight">Welcome Back</h2>
-                <p class="text-slate-500 text-sm leading-relaxed">
-                    Sign in to your {{ $system_settings['platform_name'] ?? 'APP' }} admin account.
-                </p>
             </div>
-
-            @if($errors->any())
-                <div
-                    class="mb-8 p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-bold border border-red-100 flex items-start">
-                    <i data-lucide="alert-circle" class="w-4 h-4 mr-2 mt-0.5"></i>
-                    <ul class="flex-1 space-y-1">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            @if(session('success'))
-                <div
-                    class="mb-8 p-4 bg-emerald-50 text-emerald-600 rounded-2xl text-xs font-bold border border-emerald-100 flex items-center">
-                    <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('info'))
-                <div
-                    class="mb-8 p-4 bg-blue-50 text-blue-600 rounded-2xl text-xs font-bold border border-blue-100 flex items-center">
-                    <i data-lucide="info" class="w-4 h-4 mr-2"></i>
-                    {{ session('info') }}
-                </div>
-            @endif
-
-            <form method="POST" action="{{ route('login.post') }}" class="space-y-6">
-                @csrf
-                <div>
-                    <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Email
-                        Address</label>
-                    <div class="relative group">
-                        <i data-lucide="mail"
-                            class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary-500 transition-colors"></i>
-                        <input type="email" name="email" value="{{ old('email') }}" required autofocus
-                            class="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all"
-                            placeholder="admin@example.com">
-                    </div>
-                </div>
-
-                <div>
-                    <div class="flex items-center justify-between mb-2 px-1">
-                        <label class="block text-xs font-black text-slate-400 uppercase tracking-widest">Password</label>
-                        @if(($system_settings['user_can_forget_password'] ?? '1') == '1')
-                            <a href="{{ route('password.request') }}" class="text-[10px] font-bold text-primary-600 hover:underline transition-all">Forgot password?</a>
-                        @else
-                            <span class="text-[10px] font-bold text-slate-400 cursor-help" title="Password reset via self-service is disabled. Please contact your system administrator.">Forgot password? Contact Administrator</span>
-                        @endif
-                    </div>
-                    <x-password-input name="password" required placeholder="••••••••" />
-                </div>
-
-                <div class="flex items-center px-1">
-                    <input type="checkbox" id="remember" name="remember"
-                        class="w-4 h-4 text-primary-600 border-slate-300 rounded focus:ring-primary-500">
-                    <label for="remember"
-                        class="ml-2 block text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer">Remember
-                        me</label>
-                </div>
-
-                <button type="submit"
-                    class="w-full py-4 bg-primary-600 text-white rounded-2xl font-bold text-sm shadow-xl shadow-primary-500/20 hover:bg-primary-700 hover:-translate-y-1 transition-all">
-                    Sign In to Platform
-                </button>
-            </form>
-
-            <div class="mt-10 pt-8 border-t border-slate-50 text-center">
-                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mb-2">Secure Portal</p>
-                <p class="text-[10px] text-slate-400 leading-relaxed max-w-[200px] mx-auto font-medium">
-                    ISO 27001 Certified Environment
-                </p>
+            <div>
+                <strong class="block text-[#17201c] font-bold text-lg leading-tight">{{ $system_settings['platform_name'] ?? 'Adamawa Export Market' }}</strong>
+                <small class="block text-[#65736b] text-sm">Enterprise login</small>
             </div>
         </div>
-    </div>
+
+        @if($errors->any())
+            <div class="p-3 mb-4 bg-[#fde8e6] text-[#b83a35] rounded-lg text-sm font-medium border border-[#b83a35]/20">
+                <ul class="space-y-1">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @if(session('success'))
+            <div class="p-3 mb-4 bg-[#e6f4ec] text-[#17633c] rounded-lg text-sm font-medium border border-[#17633c]/20">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('login.post') }}" class="space-y-4">
+            @csrf
+            
+            <div class="flex flex-col gap-2">
+                <label class="text-[#17201c] font-[750] text-sm">Email</label>
+                <input type="email" name="email" value="{{ old('email') }}" required autofocus
+                    class="form-input-custom w-full min-h-[42px] px-3 py-2 rounded-lg text-[#17201c] bg-white"
+                    placeholder="admin@example.com">
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="text-[#17201c] font-[750] text-sm">Password</label>
+                <input type="password" name="password" required
+                    class="form-input-custom w-full min-h-[42px] px-3 py-2 rounded-lg text-[#17201c] bg-white"
+                    placeholder="••••••••">
+            </div>
+
+            <div class="flex items-center">
+                <input type="checkbox" id="remember" name="remember" class="w-4 h-4 text-[#1f7a4d] border-[#d7e3da] rounded focus:ring-[#1f7a4d]">
+                <label for="remember" class="ml-2 block text-sm font-medium text-[#65736b] !mb-0 !font-normal">Remember me</label>
+            </div>
+
+            <button type="submit" class="btn-primary w-full min-h-[40px] px-4 rounded-lg font-[800] text-sm flex items-center justify-center mt-2">
+                Sign In
+            </button>
+        </form>
+
+        <div class="flex flex-wrap gap-2.5 mt-4">
+            <a href="/" class="btn-secondary flex-1 min-h-[40px] px-4 rounded-lg font-[800] text-sm flex items-center justify-center">Back to Landing</a>
+            <a href="/register" class="btn-secondary flex-1 min-h-[40px] px-4 rounded-lg font-[800] text-sm flex items-center justify-center">Create Account</a>
+        </div>
+
+        <div class="flex flex-col gap-2 mt-6 p-4 bg-[#f8fbf8] rounded-lg border border-[#d7e3da]/50">
+            <strong class="text-[#17201c] text-sm">Seeded demo accounts</strong>
+            <small class="text-[#65736b] text-xs">admin@example.com, officer@example.com, exporter@example.com, buyer@example.com, logistics@example.com</small>
+            <small class="text-[#65736b] text-xs">Password for all accounts: password</small>
+        </div>
+
+    </section>
+</div>
 @endsection
