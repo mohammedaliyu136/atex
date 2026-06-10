@@ -19,31 +19,9 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function adminDashboard()
     {
         $user = Auth::user();
-
-        if ($user->hasRole('super-admin') || $user->hasRole('field-officer')) {
-            return $this->adminDashboard($user);
-        }
-
-        if ($user->hasRole('exporter')) {
-            return $this->exporterDashboard($user);
-        }
-
-        if ($user->hasRole('logistics')) {
-            return $this->logisticsDashboard($user);
-        }
-
-        if ($user->hasRole('buyer')) {
-            return redirect('/#marketplace');
-        }
-
-        return redirect('/');
-    }
-
-    protected function adminDashboard($user)
-    {
         $metrics = [
             'users' => User::count(),
             'pending_users' => User::where('status', 'pending')->count(),
@@ -64,8 +42,9 @@ class DashboardController extends Controller
         return view('admin.dashboard.admin', compact('metrics', 'user'));
     }
 
-    protected function exporterDashboard($user)
+    public function exporterDashboard()
     {
+        $user = Auth::user();
         $profile = ExporterProfile::where('user_id', $user->id)->first();
         if (!$profile) {
             // Create profile dynamically if missing
@@ -99,29 +78,34 @@ class DashboardController extends Controller
         return view('admin.dashboard.exporter', compact('metrics', 'profile', 'user'));
     }
 
-    protected function logisticsDashboard($user)
+    public function logisticsDashboard()
     {
+        $user = Auth::user();
         $profile = LogisticsProfile::where('user_id', $user->id)->first();
         if (!$profile) {
             $profile = LogisticsProfile::create([
                 'user_id' => $user->id,
                 'company_name' => $user->name,
-                'verification_status' => 'approved',
+                'verification_status' => 'pending',
             ]);
         }
 
-        $profileId = $profile->id;
-
         $metrics = [
-            'assigned_shipments' => Shipment::where('logistics_profile_id', $profileId)->count(),
-            'in_transit_shipments' => Shipment::where('logistics_profile_id', $profileId)
-                ->whereIn('status', ['picked_up', 'customs_cleared', 'departed', 'in_transit'])
-                ->count(),
-            'delivered_shipments' => Shipment::where('logistics_profile_id', $profileId)->where('status', 'delivered')->count(),
-            'pending_assignment' => Shipment::whereNull('logistics_profile_id')->count(),
+            'active_shipments' => Shipment::where('logistics_profile_id', $profile->id)
+                ->whereNotIn('status', ['delivered', 'cancelled'])->count(),
+            'completed_shipments' => Shipment::where('logistics_profile_id', $profile->id)
+                ->where('status', 'delivered')->count(),
+            'pending_payouts' => Settlement::where('logistics_profile_id', $profile->id)
+                ->whereIn('status', ['pending', 'processing'])->sum('net_payout_amount'),
+            'total_earnings' => Settlement::where('logistics_profile_id', $profile->id)
+                ->where('status', 'credited')->sum('net_payout_amount'),
         ];
 
         return view('admin.dashboard.logistics', compact('metrics', 'profile', 'user'));
     }
-}
 
+    public function buyerDashboard()
+    {
+        return redirect('/#marketplace');
+    }
+}

@@ -39,13 +39,6 @@ class ExporterController extends Controller
             });
         }
 
-        // Role Filter
-        if ($request->filled('role')) {
-            $query->whereHas('roles', function ($q) use ($request) {
-                $q->where('name', $request->role);
-            });
-        }
-
         // Status Filter
         if ($request->filled('status')) {
             if ($request->status === 'active') {
@@ -67,9 +60,7 @@ class ExporterController extends Controller
             'trashed' => Exporter::onlyTrashed()->count(),
         ];
 
-        $roles = Role::where('name', '!=', 'super-admin')->get();
-
-        return view('admin.exporters.index', compact('exporters', 'stats', 'roles'));
+        return view('admin.exporters.index', compact('exporters', 'stats'));
     }
 
     public function show(Exporter $exporter)

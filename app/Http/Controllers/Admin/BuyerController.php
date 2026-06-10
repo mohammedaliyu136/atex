@@ -39,13 +39,6 @@ class BuyerController extends Controller
             });
         }
 
-        // Role Filter
-        if ($request->filled('role')) {
-            $query->whereHas('roles', function ($q) use ($request) {
-                $q->where('name', $request->role);
-            });
-        }
-
         // Status Filter
         if ($request->filled('status')) {
             if ($request->status === 'active') {
@@ -67,9 +60,7 @@ class BuyerController extends Controller
             'trashed' => Buyer::onlyTrashed()->count(),
         ];
 
-        $roles = Role::where('name', '!=', 'super-admin')->get();
-
-        return view('admin.buyers.index', compact('buyers', 'stats', 'roles'));
+        return view('admin.buyers.index', compact('buyers', 'stats'));
     }
 
     public function show(Buyer $buyer)

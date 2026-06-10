@@ -104,11 +104,18 @@
 
                 <!-- Nav Links -->
                 <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto fancy-scroll">
-                    <a href="{{ route('admin.dashboard') }}" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl {{ request()->routeIs('admin.dashboard') ? 'sidebar-active' : 'text-white/60 hover:bg-white/10 hover:text-white' }}">
+                    @php
+                        $dashboardRoute = 'admin.dashboard';
+                        if(auth()->user()->hasRole('exporter')) $dashboardRoute = 'exporter.dashboard';
+                        elseif(auth()->user()->hasRole('buyer')) $dashboardRoute = 'buyer.dashboard';
+                        elseif(auth()->user()->hasRole('logistics')) $dashboardRoute = 'logistics.dashboard';
+                    @endphp
+                    <a href="{{ route($dashboardRoute) }}" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl {{ request()->routeIs($dashboardRoute) ? 'sidebar-active' : 'text-white/60 hover:bg-white/10 hover:text-white' }}">
                         <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>
                         Dashboard
                     </a>
                     
+                    @hasanyrole('super-admin|admin')
                     <div class="pt-4 pb-2 text-xs font-semibold tracking-wider uppercase text-white/30">Export Market</div>
                     
                     <a href="{{ route('admin.atex.users.index') }}" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl {{ request()->routeIs('admin.atex.users.*') ? 'sidebar-active' : 'text-white/60 hover:bg-white/10 hover:text-white' }}">
@@ -172,16 +179,6 @@
                         My Profile
                     </a>
 
-                    <div class="pt-4 pb-2 text-xs font-semibold tracking-wider uppercase text-white/30">Revenue Management</div>
-                    <a href="{{ route('admin.shops.index') }}" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl {{ request()->routeIs('admin.shops.*') ? 'sidebar-active' : 'text-white/60 hover:bg-white/10 hover:text-white' }}">
-                        <i data-lucide="store" class="w-5 h-5 mr-3"></i>
-                        Shop Approvals
-                    </a>
-                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
-                        <i data-lucide="credit-card" class="w-5 h-5 mr-3"></i>
-                        Payments
-                    </a>
-
                     <div class="pt-4 pb-2 text-xs font-semibold tracking-wider uppercase text-white/30">Administration</div>
                     <a href="{{ route('admin.users.index') }}" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl {{ request()->routeIs('admin.users.*') ? 'sidebar-active' : 'text-white/60 hover:bg-white/10 hover:text-white' }}">
                         <i data-lucide="users" class="w-5 h-5 mr-3"></i>
@@ -195,6 +192,94 @@
                         <i data-lucide="settings" class="w-5 h-5 mr-3"></i>
                         System Settings
                     </a>
+                    @endhasanyrole
+
+                    @hasrole('exporter')
+                    <div class="pt-4 pb-2 text-xs font-semibold tracking-wider uppercase text-white/30">My Export Business</div>
+                    
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="box" class="w-5 h-5 mr-3"></i>
+                        My Products
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="warehouse" class="w-5 h-5 mr-3"></i>
+                        Inventory
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="message-square" class="w-5 h-5 mr-3"></i>
+                        Received RFQs
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="shopping-cart" class="w-5 h-5 mr-3"></i>
+                        My Orders
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="file-text" class="w-5 h-5 mr-3"></i>
+                        Compliance Docs
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="banknote" class="w-5 h-5 mr-3"></i>
+                        Payments & Payouts
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="user" class="w-5 h-5 mr-3"></i>
+                        Company Profile
+                    </a>
+                    @endhasrole
+
+                    @hasrole('buyer')
+                    <div class="pt-4 pb-2 text-xs font-semibold tracking-wider uppercase text-white/30">Buying & Sourcing</div>
+                    
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="search" class="w-5 h-5 mr-3"></i>
+                        Browse Products
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="message-square" class="w-5 h-5 mr-3"></i>
+                        My RFQs
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="shopping-cart" class="w-5 h-5 mr-3"></i>
+                        Purchase Orders
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="package" class="w-5 h-5 mr-3"></i>
+                        Track Shipments
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="credit-card" class="w-5 h-5 mr-3"></i>
+                        Payment History
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="user" class="w-5 h-5 mr-3"></i>
+                        Buyer Profile
+                    </a>
+                    @endhasrole
+
+                    @hasrole('logistics')
+                    <div class="pt-4 pb-2 text-xs font-semibold tracking-wider uppercase text-white/30">Logistics Operations</div>
+                    
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="truck" class="w-5 h-5 mr-3"></i>
+                        Active Shipments
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="map-pin" class="w-5 h-5 mr-3"></i>
+                        Update Tracking
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="file-check" class="w-5 h-5 mr-3"></i>
+                        Shipping Documents
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="banknote" class="w-5 h-5 mr-3"></i>
+                        Earnings & Payouts
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                        <i data-lucide="user" class="w-5 h-5 mr-3"></i>
+                        Company Profile
+                    </a>
+                    @endhasrole
                 </nav>
 
                 <!-- User Profile -->

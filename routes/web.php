@@ -18,7 +18,17 @@ Route::get('/register', [\App\Http\Controllers\Auth\RegisteredUserController::cl
 Route::post('/register', [\App\Http\Controllers\Auth\RegisteredUserController::class, 'store']);
 
 Route::get('/dashboard', function () {
-    return redirect()->route('admin.dashboard');
+    $user = \Illuminate\Support\Facades\Auth::user();
+    if ($user->hasRole('super-admin') || $user->hasRole('field-officer')) {
+        return redirect()->route('admin.dashboard');
+    } elseif ($user->hasRole('exporter')) {
+        return redirect()->route('exporter.dashboard');
+    } elseif ($user->hasRole('buyer')) {
+        return redirect()->route('buyer.dashboard');
+    } elseif ($user->hasRole('logistics')) {
+        return redirect()->route('logistics.dashboard');
+    }
+    return redirect('/');
 })->name('dashboard');
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -54,10 +64,22 @@ Route::middleware(['auth', 'verified', 'security_policy'])->group(function () {
     Route::post('/kyc/onboarding', [\App\Http\Controllers\Auth\KycOnboardingController::class, 'store'])->name('kyc.onboarding.store');
 });
 
-Route::middleware(['auth', 'verified', 'security_policy', 'kyc_completed'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('admin.dashboard');
+Route::middleware(['auth', 'verified', 'security_policy', 'kyc_completed'])->group(function () {
+    Route::prefix('exporter')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'exporterDashboard'])->name('exporter.dashboard');
+    });
 
-    // Atex App Routes
+    Route::prefix('buyer')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'buyerDashboard'])->name('buyer.dashboard');
+    });
+
+    Route::prefix('logistics')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'logisticsDashboard'])->name('logistics.dashboard');
+    });
+
+    Route::prefix('admin')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
+
     Route::get('/atex/profile', [\App\Http\Controllers\Exporter\ProfileController::class, 'show'])->name('admin.profile.show');
     Route::post('/atex/profile', [\App\Http\Controllers\Exporter\ProfileController::class, 'update'])->name('admin.profile.update');
 
@@ -184,6 +206,7 @@ Route::middleware(['auth', 'verified', 'security_policy', 'kyc_completed'])->pre
         Route::post('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('admin.settings.update');
         Route::delete('settings/logo', [\App\Http\Controllers\Admin\SettingController::class, 'deleteLogo'])->name('admin.settings.delete-logo');
         Route::post('settings/test-mail', [\App\Http\Controllers\Admin\SettingController::class, 'sendTestMail'])->name('admin.settings.test-mail');
+    });
     });
 });
 
