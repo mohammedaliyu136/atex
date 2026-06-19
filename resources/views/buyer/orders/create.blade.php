@@ -19,8 +19,8 @@
       <input type="text" value="{{ $product->name }}" disabled style="background: var(--soft);">
     </label>
 
-    <label>Exporter / Seller
-      <input type="text" value="{{ $product->exporterProfile->business_name ?? 'Unknown Exporter' }}" disabled style="background: var(--soft);">
+    <label>Seller / Seller
+      <input type="text" value="{{ $product->sellerProfile->business_name ?? 'Unknown Seller' }}" disabled style="background: var(--soft);">
     </label>
 
     <label>MOQ / Price Info

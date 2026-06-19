@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Exporter Settlements | Adamawa Export Market')
+@section('title', 'Seller Settlements | Adamawa Export Market')
 @section('header_title', 'Seller Settlements')
 
 @section('content')
@@ -12,11 +12,11 @@
   <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
     <thead>
       <tr style="text-align: left; border-bottom: 1px solid var(--line);">
-        <th style="padding: 10px 5px;">Order No / Exporter</th>
+        <th style="padding: 10px 5px;">Order No / Seller</th>
         <th style="padding: 10px 5px;">Gross</th>
         <th style="padding: 10px 5px;">Commission (10%)</th>
         <th style="padding: 10px 5px;">Export Tax (7.5%)</th>
-        <th style="padding: 10px 5px;">Net Exporter Payout</th>
+        <th style="padding: 10px 5px;">Net Seller Payout</th>
         <th style="padding: 10px 5px;">Status</th>
         <th style="padding: 10px 5px;">Release Notes</th>
         <th style="padding: 10px 5px; text-align: right;">Action</th>
@@ -27,7 +27,7 @@
         <tr style="border-bottom: 1px solid var(--soft);">
           <td style="padding: 12px 5px;">
             <strong>{{ $set->order->order_number ?? 'AEM-ORD' }}</strong><br>
-            <span class="muted">{{ $set->exporterProfile->business_name ?? 'Unknown Exporter' }}</span>
+            <span class="muted">{{ $set->sellerProfile->business_name ?? 'Unknown Seller' }}</span>
           </td>
           <td style="padding: 12px 5px;">USD {{ number_format((float) $set->gross_amount, 2) }}</td>
           <td style="padding: 12px 5px; color: #b83a35;">- USD {{ number_format((float) $set->commission_amount, 2) }}</td>

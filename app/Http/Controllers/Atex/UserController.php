@@ -13,11 +13,11 @@ class UserController extends Controller
     public function index()
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 
-        $accounts = User::with(['exporterProfile', 'buyerProfile', 'logisticsProfile'])->latest()->get();
+        $accounts = User::with(['sellerProfile', 'buyerProfile', 'logisticsProfile'])->latest()->get();
 
         return view('atex.users.index', compact('accounts'));
     }
@@ -25,7 +25,7 @@ class UserController extends Controller
     public function status(Request $request)
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 

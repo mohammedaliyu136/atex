@@ -54,8 +54,8 @@
 
   <!-- Action Response Panel -->
   <div class="panel">
-    @if($quote->status === 'open' && $user->hasRole('exporter'))
-      <!-- Exporter response form -->
+    @if($quote->status === 'open' && $user->hasRole('seller'))
+      <!-- Seller response form -->
       <div class="panel-head">
         <h3>Submit Quote Offer</h3>
         <span class="status pending">Required</span>
@@ -74,7 +74,7 @@
     @elseif($quote->status === 'responded')
       <!-- Display Response Offer details -->
       <div class="panel-head">
-        <h3>Exporter Offer</h3>
+        <h3>Seller Offer</h3>
         <span class="status active">Active Offer</span>
       </div>
       <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
@@ -119,7 +119,7 @@
         <h3>Negotiation Status</h3>
         <span class="status {{ $quote->status }}">{{ $quote->status }}</span>
       </div>
-      <p style="margin-top: 15px;">Awaiting response from exporter. Standard SLA for response is 24 hours.</p>
+      <p style="margin-top: 15px;">Awaiting response from seller. Standard SLA for response is 24 hours.</p>
     @endif
   </div>
 </section>

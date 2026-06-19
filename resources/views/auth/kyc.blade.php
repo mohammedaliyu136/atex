@@ -167,9 +167,11 @@
       $isPending = $profile && $profile->verification_status === 'pending';
       $isApproved = $profile && $profile->verification_status === 'approved';
       $isRejected = $profile && $profile->verification_status === 'rejected';
+      $isExisting = (bool) $profile;
     @endphp
 
-    @if($isPending)
+    @if(!$user->hasRole('buyer'))
+      @if($isPending)
       <div class="pending-state">
         <i data-lucide="clock" class="pending-icon"></i>
         <h1 style="font-size: 1.25rem;">Under Review</h1>
@@ -228,6 +230,8 @@
       @endif
     @endif
 
+    @endif
+
     @if(session('success'))
       <div class="alert alert-success">{{ session('success') }}</div>
     @endif
@@ -235,11 +239,71 @@
     <form method="POST" action="{{ route('kyc.onboarding.store') }}" enctype="multipart/form-data">
       @csrf
 
-      @unless($profile)
+      @if($user->hasRole('buyer'))
+          <h1>Complete Your Profile</h1>
+          <p class="mb-2">Please provide your shipping and billing details.</p>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label class="form-label">Phone Number *</label>
+                <input type="text" name="phone_number" value="{{ old('phone_number', $profile->phone_number ?? '') }}" class="form-input" required>
+                @error('phone_number') <p class="input-error">{{ $message }}</p> @enderror
+            </div>
+            <div class="form-group">
+                <label class="form-label">Gender</label>
+                <select name="gender" class="form-input">
+                    <option value="">Select Gender</option>
+                    <option value="Male" {{ old('gender', $profile->gender ?? '') == 'Male' ? 'selected' : '' }}>Male</option>
+                    <option value="Female" {{ old('gender', $profile->gender ?? '') == 'Female' ? 'selected' : '' }}>Female</option>
+                    <option value="Other" {{ old('gender', $profile->gender ?? '') == 'Other' ? 'selected' : '' }}>Other</option>
+                </select>
+                @error('gender') <p class="input-error">{{ $message }}</p> @enderror
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Shipping Address *</label>
+            <textarea name="shipping_address" class="form-input" required>{{ old('shipping_address', $profile->shipping_address ?? '') }}</textarea>
+            @error('shipping_address') <p class="input-error">{{ $message }}</p> @enderror
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Billing Address (Optional)</label>
+            <textarea name="billing_address" class="form-input">{{ old('billing_address', $profile->billing_address ?? '') }}</textarea>
+            @error('billing_address') <p class="input-error">{{ $message }}</p> @enderror
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label class="form-label">City *</label>
+                <input type="text" name="city" value="{{ old('city', $profile->city ?? '') }}" class="form-input" required>
+                @error('city') <p class="input-error">{{ $message }}</p> @enderror
+            </div>
+            <div class="form-group">
+                <label class="form-label">State *</label>
+                <input type="text" name="state" value="{{ old('state', $profile->state ?? '') }}" class="form-input" required>
+                @error('state') <p class="input-error">{{ $message }}</p> @enderror
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label class="form-label">Zip Code *</label>
+                <input type="text" name="zip_code" value="{{ old('zip_code', $profile->zip_code ?? '') }}" class="form-input" required>
+                @error('zip_code') <p class="input-error">{{ $message }}</p> @enderror
+            </div>
+            <div class="form-group">
+                <label class="form-label">Country *</label>
+                <input type="text" name="country" value="{{ old('country', $profile->country ?? 'Nigeria') }}" class="form-input" required>
+                @error('country') <p class="input-error">{{ $message }}</p> @enderror
+            </div>
+          </div>
+      @else
+        @unless($profile)
         <h1>Complete Your Profile</h1>
         <p class="mb-2">Please provide your details to get started.</p>
 
-        @if($user->hasRole('field-officer'))
+        @if($user->hasRole('admin'))
           <div class="form-group">
             <label class="form-label">Full Name</label>
             <input type="text" name="full_name" value="{{ old('full_name') }}" class="form-input" required>
@@ -308,7 +372,7 @@
           @error('account_name') <p class="input-error">{{ $message }}</p> @enderror
         </div>
 
-        @if($user->hasRole('exporter') || $user->hasRole('buyer'))
+        @if($user->hasRole('seller') || $user->hasRole('buyer'))
           <div class="form-group">
             <label class="form-label">Monthly Trade Volume Capacity</label>
             <input type="text" name="trade_capacity" value="{{ old('trade_capacity') }}" class="form-input">
@@ -324,7 +388,7 @@
           </div>
         @endif
 
-        @if($user->hasRole('field-officer'))
+        @if($user->hasRole('admin'))
           <div class="form-group">
             <label class="form-label">Staff ID Number</label>
             <input type="text" name="identification_number" value="{{ old('identification_number') }}" class="form-input">
@@ -337,9 +401,8 @@
 
       @php
         $documents = $profile
-          ? \App\Models\Document::where('owner_type', $user->hasRole('field-officer') ? 'field-officer' : ($user->hasRole('exporter') ? 'exporter' : ($user->hasRole('buyer') ? 'buyer' : 'logistics')))->where('owner_id', $profile->id)->get()->keyBy('document_type')
+          ? \App\Models\Document::where('owner_type', $user->hasRole('admin') ? 'admin' : ($user->hasRole('seller') ? 'seller' : ($user->hasRole('buyer') ? 'buyer' : 'logistics')))->where('owner_id', $profile->id)->get()->keyBy('document_type')
           : collect();
-        $isExisting = (bool) $profile;
       @endphp
 
       @if($isExisting)
@@ -411,7 +474,7 @@
           @endif
         @endforeach
 
-        @if($user->hasRole('exporter'))
+        @if($user->hasRole('seller'))
           @if(($doc = $documents->get('nepc_certificate')) && $doc->status === 'rejected')
             <div class="form-group">
               <label class="form-label">NEPC Certificate</label>
@@ -443,7 +506,7 @@
           </div>
         @endforeach
 
-        @if($user->hasRole('exporter'))
+        @if($user->hasRole('seller'))
           <div class="form-group">
             <label class="form-label">NEPC Certificate</label>
             <input type="file" name="nepc_certificate" class="form-input" accept=".pdf,.jpg,.jpeg,.png" required>
@@ -457,6 +520,7 @@
             <input type="file" name="git_insurance" class="form-input" accept=".pdf,.jpg,.jpeg,.png" required>
             @error('git_insurance') <p class="input-error">{{ $message }}</p> @enderror
           </div>
+        @endif
         @endif
       @endif
 

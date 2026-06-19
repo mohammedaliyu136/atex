@@ -13,7 +13,7 @@ class Order extends Model
         'quote_request_id',
         'product_id',
         'buyer_profile_id',
-        'exporter_profile_id',
+        'seller_profile_id',
         'order_quantity',
         'destination_location',
         'total_amount',
@@ -50,9 +50,9 @@ class Order extends Model
         return $this->belongsTo(BuyerProfile::class);
     }
 
-    public function exporterProfile(): BelongsTo
+    public function sellerProfile(): BelongsTo
     {
-        return $this->belongsTo(ExporterProfile::class);
+        return $this->belongsTo(SellerProfile::class);
     }
 
     public function settlement(): HasOne

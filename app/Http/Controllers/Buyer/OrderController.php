@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\BuyerProfile;
-use App\Models\ExporterProfile;
+use App\Models\SellerProfile;
 use App\Models\Settlement;
 use App\Models\Shipment;
 use App\Models\AtexAuditLog;
@@ -20,20 +20,20 @@ class OrderController extends Controller
     {
         $user = Auth::user();
         
-        if ($user->hasRole('super-admin') || $user->hasRole('field-officer')) {
-            $orders = Order::with(['buyerProfile', 'exporterProfile', 'product'])->latest()->get();
+        if ($user->hasRole('super-admin') || $user->hasRole('admin')) {
+            $orders = Order::with(['buyerProfile', 'sellerProfile', 'product'])->latest()->get();
             return view('buyer.orders.admin', compact('orders'));
         }
 
-        if ($user->hasRole('exporter')) {
-            $profile = ExporterProfile::where('user_id', $user->id)->first();
-            $orders = Order::where('exporter_profile_id', $profile->id ?? 0)->with(['buyerProfile', 'product'])->latest()->get();
-            return view('buyer.orders.exporter', compact('orders'));
+        if ($user->hasRole('seller')) {
+            $profile = SellerProfile::where('user_id', $user->id)->first();
+            $orders = Order::where('seller_profile_id', $profile->id ?? 0)->with(['buyerProfile', 'product'])->latest()->get();
+            return view('buyer.orders.seller', compact('orders'));
         }
 
         if ($user->hasRole('buyer')) {
             $profile = BuyerProfile::where('user_id', $user->id)->first();
-            $orders = Order::where('buyer_profile_id', $profile->id ?? 0)->with(['exporterProfile', 'product'])->latest()->get();
+            $orders = Order::where('buyer_profile_id', $profile->id ?? 0)->with(['sellerProfile', 'product'])->latest()->get();
             return view('buyer.orders.buyer', compact('orders'));
         }
 
@@ -42,7 +42,7 @@ class OrderController extends Controller
             $profileId = $profile->id ?? 0;
             $orders = Order::whereHas('shipment', function ($query) use ($profileId) {
                 $query->where('logistics_profile_id', $profileId);
-            })->with(['buyerProfile', 'exporterProfile', 'product', 'shipment'])->latest()->get();
+            })->with(['buyerProfile', 'sellerProfile', 'product', 'shipment'])->latest()->get();
             return view('buyer.orders.logistics', compact('orders'));
         }
 
@@ -57,7 +57,7 @@ class OrderController extends Controller
         }
 
         $productId = $request->product_id;
-        $product = Product::with('exporterProfile')->findOrFail($productId);
+        $product = Product::with('sellerProfile')->findOrFail($productId);
         
         return view('buyer.orders.create', compact('product'));
     }
@@ -99,7 +99,7 @@ class OrderController extends Controller
             'order_number' => $orderNumber,
             'product_id' => $product->id,
             'buyer_profile_id' => $buyer->id,
-            'exporter_profile_id' => $product->exporter_profile_id,
+            'seller_profile_id' => $product->seller_profile_id,
             'order_quantity' => $request->order_quantity,
             'destination_location' => $request->destination_location,
             'total_amount' => $totalAmount,
@@ -118,7 +118,7 @@ class OrderController extends Controller
         // Create Settlement Record
         Settlement::create([
             'order_id' => $order->id,
-            'exporter_profile_id' => $product->exporter_profile_id,
+            'seller_profile_id' => $product->seller_profile_id,
             'gross_amount' => $totalAmount,
             'commission_amount' => $commission,
             'tax_amount' => $tax,
@@ -149,12 +149,12 @@ class OrderController extends Controller
     public function show($id)
     {
         $user = Auth::user();
-        $order = Order::with(['buyerProfile.user', 'exporterProfile.user', 'product', 'settlement', 'shipment.logisticsProfile.user'])->findOrFail($id);
+        $order = Order::with(['buyerProfile.user', 'sellerProfile.user', 'product', 'settlement', 'shipment.logisticsProfile.user'])->findOrFail($id);
 
         // Security check
-        if ($user->hasRole('exporter')) {
-            $profile = ExporterProfile::where('user_id', $user->id)->first();
-            if ($order->exporter_profile_id !== $profile->id) {
+        if ($user->hasRole('seller')) {
+            $profile = SellerProfile::where('user_id', $user->id)->first();
+            if ($order->seller_profile_id !== $profile->id) {
                 abort(403);
             }
         } elseif ($user->hasRole('buyer')) {
@@ -175,12 +175,12 @@ class OrderController extends Controller
     public function fulfillment()
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 
         $orders = Order::where('fulfillment_mode', 'afribidge')
-            ->with(['buyerProfile', 'exporterProfile', 'product', 'shipment.logisticsProfile'])
+            ->with(['buyerProfile', 'sellerProfile', 'product', 'shipment.logisticsProfile'])
             ->latest()
             ->get();
         $logistics = LogisticsProfile::where('verification_status', 'approved')->get();
@@ -191,7 +191,7 @@ class OrderController extends Controller
     public function fulfillmentUpdate(Request $request, $id)
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 

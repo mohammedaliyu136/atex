@@ -43,9 +43,9 @@
           </td>
         </tr>
         <tr style="border-bottom: 1px solid var(--soft);">
-          <th style="text-align: left; padding: 10px 5px;">Exporter</th>
+          <th style="text-align: left; padding: 10px 5px;">Seller</th>
           <td style="padding: 10px 5px;">
-            <strong>{{ $order->exporterProfile->business_name ?? 'Exporter Cooperative' }}</strong>
+            <strong>{{ $order->sellerProfile->business_name ?? 'Seller Cooperative' }}</strong>
           </td>
         </tr>
         <tr>
@@ -72,7 +72,7 @@
             <td style="text-align: right; padding: 4px 0; color: #b83a35;">- {{ $order->currency }} {{ number_format((float) $order->tax_amount, 2) }}</td>
           </tr>
           <tr style="border-top: 1px solid var(--line); font-weight: bold;">
-            <td style="padding: 8px 0; color: var(--leaf);">Net Exporter Payout:</td>
+            <td style="padding: 8px 0; color: var(--leaf);">Net Seller Payout:</td>
             <td style="text-align: right; padding: 8px 0; color: var(--leaf);">{{ $order->currency }} {{ number_format((float) $order->net_payout_amount, 2) }}</td>
           </tr>
         </tbody>

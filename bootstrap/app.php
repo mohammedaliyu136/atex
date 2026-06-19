@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'security_policy' => \App\Http\Middleware\EnforceSecurityPolicy::class,
             'kyc_completed' => \App\Http\Middleware\EnsureKycCompleted::class,
+            'legal_acceptance' => \App\Http\Middleware\EnforceDocumentAcceptance::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

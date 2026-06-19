@@ -43,6 +43,10 @@ class RolesAndPermissionsSeeder extends Seeder
                 'users email',
                 'users unlock',
             ],
+            'Legal Documents' => [
+                'view legal documents',
+                'manage legal documents',
+            ],
         ];
 
         foreach ($permissionGroups as $group => $perms) {
@@ -55,7 +59,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $adminRole = Role::findOrCreate('super-admin');
         $adminRole->givePermissionTo(Permission::all());
 
-        $officerRole = Role::findOrCreate('field-officer');
+        $officerRole = Role::findOrCreate('admin');
         $officerRole->givePermissionTo(['view payments']);
 
         // User creation is now handled in DatabaseSeeder.php

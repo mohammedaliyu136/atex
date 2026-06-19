@@ -13,9 +13,9 @@
     </div>
     <form action="{{ route('admin.inventory.receive') }}" method="POST" class="form-grid" style="margin-top: 20px; display: grid; gap: 15px;">
       @csrf
-      <label>Exporter Profile
-        <select name="exporter_profile_id" required>
-          @foreach($exporters as $exp)
+      <label>Seller Profile
+        <select name="seller_profile_id" required>
+          @foreach($sellers as $exp)
             <option value="{{ $exp->id }}">{{ $exp->business_name }}</option>
           @endforeach
         </select>
@@ -24,7 +24,7 @@
       <label>Product Listing
         <select name="product_id" required>
           @foreach($products as $prod)
-            <option value="{{ $prod->id }}">{{ $prod->name }} (by {{ $prod->exporterProfile->business_name ?? 'Unknown' }})</option>
+            <option value="{{ $prod->id }}">{{ $prod->name }} (by {{ $prod->sellerProfile->business_name ?? 'Unknown' }})</option>
           @endforeach
         </select>
       </label>
@@ -68,7 +68,7 @@
     <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
       <thead>
         <tr style="text-align: left; border-bottom: 1px solid var(--line);">
-          <th style="padding: 10px 5px;">Exporter / Product</th>
+          <th style="padding: 10px 5px;">Seller / Product</th>
           <th style="padding: 10px 5px;">Stock Level</th>
           <th style="padding: 10px 5px;">Location</th>
           <th style="padding: 10px 5px;">Arrival</th>
@@ -78,7 +78,7 @@
         @forelse($records as $rec)
           <tr style="border-bottom: 1px solid var(--soft);">
             <td style="padding: 12px 5px;">
-              <strong>{{ $rec->exporterProfile->business_name ?? 'Unknown' }}</strong><br>
+              <strong>{{ $rec->sellerProfile->business_name ?? 'Unknown' }}</strong><br>
               <span class="muted">{{ $rec->product->name ?? 'Deleted product' }}</span><br>
               <small class="muted">SKU: {{ $rec->seller_sku ?: 'AEM-SKU' }} | Brand: {{ $rec->brand_name ?: 'AEM' }}</small>
             </td>

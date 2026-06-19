@@ -16,9 +16,9 @@
     <small>Awaiting approval</small>
   </article>
   <article class="card">
-    <span class="muted">Exporters</span>
-    <strong>{{ $metrics['exporters'] }}</strong>
-    <small>Exporter profiles</small>
+    <span class="muted">Sellers</span>
+    <strong>{{ $metrics['sellers'] }}</strong>
+    <small>Seller profiles</small>
   </article>
   <article class="card">
     <span class="muted">Buyers</span>
@@ -80,7 +80,7 @@
       <h2>Operations Roadmap</h2>
       <span class="status pending">Pending</span>
     </div>
-    <p style="margin-top: 15px;">Monitor registration workflow, verify exporter documents, catalog marketplace products, and manage logistics and payout releases.</p>
+    <p style="margin-top: 15px;">Monitor registration workflow, verify seller documents, catalog marketplace products, and manage logistics and payout releases.</p>
   </div>
 </section>
 @endsection

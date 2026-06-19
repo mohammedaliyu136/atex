@@ -9,16 +9,16 @@
               <h1 data-hero-title>Grow Adamawa exports with one trusted trade platform</h1>
               <p>
                 <span data-hero-copy>
-                Connect verified local exporters with global buyers through a digital trade
+                Connect verified local sellers with global buyers through a digital trade
                 flow for product discovery, seller onboarding, AfriBridge-managed fulfillment, and compliance.
                 </span>
               </p>
               <div class="hero-actions">
-                <a class="btn primary" href="{{ route('register') }}">Register as Exporter</a>
+                <a class="btn primary" href="{{ route('register') }}">Register now</a>
                 <a class="btn light" href="#marketplace">Find Products</a>
               </div>
               <div class="hero-points">
-                <span><i data-lucide="badge-check"></i> Verified exporters</span>
+                <span><i data-lucide="badge-check"></i> Verified sellers</span>
                 <span><i data-lucide="shield-check"></i> Compliance-first workflow</span>
                 <span><i data-lucide="ship"></i> Shipment visibility</span>
               </div>
@@ -34,7 +34,7 @@
             <aside class="hero-search-panel">
               <span class="eyebrow">Product And Partner Search</span>
               <h2>Find export-ready suppliers faster</h2>
-              <p>Search by product, sector, destination readiness, and exporter profile from one marketplace.</p>
+              <p>Search by product, sector, destination readiness, and seller profile from one marketplace.</p>
               <div class="hero-search" role="search">
                 <div class="search-field">
                   <i data-lucide="search"></i>
@@ -53,7 +53,7 @@
                 <button class="btn primary" type="button" id="heroSearchBtn">Search</button>
               </div>
               <div class="hero-search-meta">
-                <span>248 verified exporters</span>
+                <span>248 verified sellers</span>
                 <span>1,420 export-ready listings</span>
               </div>
             </aside>
@@ -64,7 +64,7 @@
           <div class="metric-row">
             <article>
               <strong>248</strong>
-              <span>verified exporters</span>
+              <span>verified sellers</span>
               <small>approved business profiles</small>
             </article>
             <article>
@@ -120,7 +120,7 @@
                 <span class="offer-icon"><i data-lucide="search-check"></i></span>
                 <div>
                   <h3>Seller program discovery</h3>
-                  <p>Help producers and exporters join a branded seller program with clearer product visibility and partner matching.</p>
+                  <p>Help producers and sellers join a branded seller program with clearer product visibility and partner matching.</p>
                 </div>
               </article>
               <article class="offer-card">
@@ -146,7 +146,7 @@
                 <h2>Verification built into every transaction</h2>
               </div>
               <ul class="check-list">
-                <li><i data-lucide="badge-check"></i> Exporter identity and business validation</li>
+                <li><i data-lucide="badge-check"></i> Seller identity and business validation</li>
                 <li><i data-lucide="file-check-2"></i> Product certificate and document review</li>
                 <li><i data-lucide="shield-check"></i> Payment status and dispute controls</li>
                 <li><i data-lucide="ship"></i> Logistics milestones and shipment visibility</li>
@@ -156,7 +156,7 @@
             <aside class="highlight-panel">
               <span class="eyebrow">Why It Works</span>
               <h3>One seller program with managed fulfillment</h3>
-              <p>Instead of leaving exporters to handle every shipment themselves, AfriBridge can receive branded inventory, fulfill buyer orders, deduct commission and taxes, and credit seller balances.</p>
+              <p>Instead of leaving sellers to handle every shipment themselves, AfriBridge can receive branded inventory, fulfill buyer orders, deduct commission and taxes, and credit seller balances.</p>
               <div class="highlight-stats">
                 <article><strong>Accepted</strong><span>Seller inventory is received into the fulfillment workflow</span></article>
                 <article><strong>Fulfilled</strong><span>AfriBridge ships approved marketplace orders on the seller's behalf</span></article>
@@ -204,7 +204,7 @@
                 Search
                 <div class="input-with-icon">
                   <i data-lucide="search"></i>
-                  <input id="productSearch" type="search" placeholder="Product or exporter" />
+                  <input id="productSearch" type="search" placeholder="Product or seller" />
                 </div>
               </label>
               <label>
@@ -251,56 +251,56 @@
         </div>
       </section>
 
-      <section id="exporter" class="view">
+      <section id="seller" class="view">
         <div class="page-shell">
           <div class="section-heading">
-            <span class="eyebrow">Exporter Directory</span>
-            <h2>Verified Adamawa exporters in one view</h2>
+            <span class="eyebrow">Seller Directory</span>
+            <h2>Verified Adamawa sellers in one view</h2>
             <p>Browse trusted cooperatives, processors, and trade-ready suppliers by sector, certification, and fulfillment readiness.</p>
           </div>
 
-          <div class="exporter-grid">
-            <article class="exporter-card">
-              <div class="exporter-card-top">
+          <div class="seller-grid">
+            <article class="seller-card">
+              <div class="seller-card-top">
                 <span class="status active">Verified</span>
-                <span class="exporter-score">92% readiness</span>
+                <span class="seller-score">92% readiness</span>
               </div>
               <h3>Ganye Agro Cooperative</h3>
               <p>Sesame seed, soybean, and maize aggregation for bulk export programs.</p>
-              <div class="exporter-tags">
+              <div class="seller-tags">
                 <span>Agriculture</span>
                 <span>Phytosanitary</span>
                 <span>FOB Lagos</span>
               </div>
-              <dl class="exporter-meta">
+              <dl class="seller-meta">
                 <div><dt>Location</dt><dd>Ganye</dd></div>
                 <div><dt>MOQ</dt><dd>10 MT</dd></div>
                 <div><dt>Markets</dt><dd>UAE, India</dd></div>
               </dl>
-              <div class="exporter-actions">
+              <div class="seller-actions">
                 <a class="btn primary" href="#marketplace">View Products</a>
                 <a class="btn secondary" href="{{ route('register') }}">Contact</a>
               </div>
             </article>
 
-            <article class="exporter-card">
-              <div class="exporter-card-top">
+            <article class="seller-card">
+              <div class="seller-card-top">
                 <span class="status active">Verified</span>
-                <span class="exporter-score">88% readiness</span>
+                <span class="seller-score">88% readiness</span>
               </div>
-              <h3>Mubi Agro Exporters</h3>
+              <h3>Mubi Agro Sellers</h3>
               <p>Hibiscus flower, ginger, and dried spice lots prepared for regional and EU buyers.</p>
-              <div class="exporter-tags">
+              <div class="seller-tags">
                 <span>Food Processing</span>
                 <span>Organic</span>
                 <span>CIF support</span>
               </div>
-              <dl class="exporter-meta">
+              <dl class="seller-meta">
                 <div><dt>Location</dt><dd>Mubi</dd></div>
                 <div><dt>MOQ</dt><dd>6 MT</dd></div>
                 <div><dt>Markets</dt><dd>Netherlands, Egypt</dd></div>
               </dl>
-              <div class="exporter-actions">
+              <div class="seller-actions">
                 <a class="btn primary" href="#marketplace">View Products</a>
                 <a class="btn secondary" href="{{ route('register') }}">Contact</a>
               </div>

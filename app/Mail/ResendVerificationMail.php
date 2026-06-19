@@ -33,7 +33,7 @@ class ResendVerificationMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'New Verification Link - ' . ($this->system_settings['platform_name'] ?? 'URCS'),
+            subject: 'Verify Your Email Address - ' . ($this->system_settings['platform_name'] ?? 'URCS'),
         );
     }
 

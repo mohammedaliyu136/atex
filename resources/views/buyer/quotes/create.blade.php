@@ -9,7 +9,7 @@
     <h3>Request Quote for {{ $product->name }}</h3>
     <span class="status pending">New RFQ</span>
   </div>
-  <p class="muted" style="margin-top: 10px;">Submit your trade volume requirements. Exporter will review your inquiries and respond with pricing and Incoterms details.</p>
+  <p class="muted" style="margin-top: 10px;">Submit your trade volume requirements. Seller will review your inquiries and respond with pricing and Incoterms details.</p>
 
   <form action="{{ route('admin.quotes.store') }}" method="POST" class="form-grid" style="margin-top: 25px; display: grid; gap: 15px;">
     @csrf
@@ -19,8 +19,8 @@
       <input type="text" value="{{ $product->name }}" disabled style="background: var(--soft);">
     </label>
 
-    <label>Exporter
-      <input type="text" value="{{ $product->exporterProfile->business_name ?? 'Unknown Exporter' }}" disabled style="background: var(--soft);">
+    <label>Seller
+      <input type="text" value="{{ $product->sellerProfile->business_name ?? 'Unknown Seller' }}" disabled style="background: var(--soft);">
     </label>
 
     <label>Required Quantity

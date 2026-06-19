@@ -14,7 +14,7 @@ class Admin extends User
 
         static::addGlobalScope('admin', function (Builder $builder) {
             $builder->whereHas('roles', function ($query) {
-                $query->whereIn('name', ['super-admin', 'admin', 'field-officer']);
+                $query->whereIn('name', ['super-admin', 'admin', 'admin']);
             });
         });
     }

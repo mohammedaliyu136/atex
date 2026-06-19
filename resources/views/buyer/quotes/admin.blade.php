@@ -29,7 +29,7 @@
           </td>
           <td style="padding: 12px 5px;">
             <strong>{{ $quote->product->name ?? 'Deleted Product' }}</strong><br>
-            <small class="muted">Seller: {{ $quote->product->exporterProfile->business_name ?? 'Unknown' }}</small>
+            <small class="muted">Seller: {{ $quote->product->sellerProfile->business_name ?? 'Unknown' }}</small>
           </td>
           <td style="padding: 12px 5px;">{{ $quote->quantity }}</td>
           <td style="padding: 12px 5px;">{{ $quote->destination_country }}</td>

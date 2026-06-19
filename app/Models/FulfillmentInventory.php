@@ -10,7 +10,7 @@ class FulfillmentInventory extends Model
     protected $table = 'fulfillment_inventory';
 
     protected $fillable = [
-        'exporter_profile_id',
+        'seller_profile_id',
         'product_id',
         'brand_name',
         'seller_sku',
@@ -33,9 +33,9 @@ class FulfillmentInventory extends Model
         'quantity_fulfilled' => 'integer',
     ];
 
-    public function exporterProfile(): BelongsTo
+    public function sellerProfile(): BelongsTo
     {
-        return $this->belongsTo(ExporterProfile::class);
+        return $this->belongsTo(SellerProfile::class);
     }
 
     public function product(): BelongsTo

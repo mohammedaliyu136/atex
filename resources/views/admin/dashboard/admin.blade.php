@@ -13,8 +13,8 @@
             <i data-lucide="package-export" class="w-6 h-6"></i>
         </div>
         <div>
-            <p class="text-xs font-semibold text-slate-400 uppercase">Exporters</p>
-            <p class="text-2xl font-bold text-slate-800">{{ number_format($metrics['exporters']) }}</p>
+            <p class="text-xs font-semibold text-slate-400 uppercase">Sellers</p>
+            <p class="text-2xl font-bold text-slate-800">{{ number_format($metrics['sellers']) }}</p>
         </div>
     </div>
 

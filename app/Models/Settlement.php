@@ -9,7 +9,7 @@ class Settlement extends Model
 {
     protected $fillable = [
         'order_id',
-        'exporter_profile_id',
+        'seller_profile_id',
         'gross_amount',
         'commission_amount',
         'tax_amount',
@@ -32,8 +32,8 @@ class Settlement extends Model
         return $this->belongsTo(Order::class);
     }
 
-    public function exporterProfile(): BelongsTo
+    public function sellerProfile(): BelongsTo
     {
-        return $this->belongsTo(ExporterProfile::class);
+        return $this->belongsTo(SellerProfile::class);
     }
 }

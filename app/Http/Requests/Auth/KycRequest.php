@@ -15,6 +15,19 @@ class KycRequest extends FormRequest
     public function rules(): array
     {
         $user = Auth::user();
+
+        if ($user->hasRole('buyer')) {
+            return [
+                'phone_number' => 'required|string|max:20',
+                'shipping_address' => 'required|string',
+                'billing_address' => 'nullable|string',
+                'city' => 'required|string|max:100',
+                'state' => 'required|string|max:100',
+                'zip_code' => 'required|string|max:20',
+                'country' => 'required|string|max:100',
+            ];
+        }
+
         $hasExistingProfile = $this->hasExistingProfile($user);
 
         $fileRule = $hasExistingProfile ? 'nullable|file' : 'required|file';
@@ -36,15 +49,13 @@ class KycRequest extends FormRequest
             'proof_of_address' => $fileRule . '|mimes:pdf,jpg,jpeg,png|max:5120',
         ];
 
-        if ($user->hasRole('exporter')) {
+        if ($user->hasRole('seller')) {
             $rules['trade_capacity'] = 'nullable|string|max:255';
             $rules['nepc_certificate'] = $fileRule . '|mimes:pdf,jpg,jpeg,png|max:5120';
-        } elseif ($user->hasRole('buyer')) {
-            $rules['trade_capacity'] = 'nullable|string|max:255';
         } elseif ($user->hasRole('logistics')) {
             $rules['fleet_size'] = 'nullable|string|max:255';
             $rules['git_insurance'] = $fileRule . '|mimes:pdf,jpg,jpeg,png|max:5120';
-        } elseif ($user->hasRole('field-officer')) {
+        } elseif ($user->hasRole('admin')) {
             $rules['identification_number'] = 'nullable|string|max:255';
             $rules['full_name'] = $textRule . '|max:255';
             $rules['phone'] = $textRule . '|max:20';
@@ -55,8 +66,8 @@ class KycRequest extends FormRequest
 
     private function hasExistingProfile($user): bool
     {
-        if ($user->hasRole('exporter')) {
-            return \App\Models\ExporterProfile::where('user_id', $user->id)->exists();
+        if ($user->hasRole('seller')) {
+            return \App\Models\SellerProfile::where('user_id', $user->id)->exists();
         }
         if ($user->hasRole('buyer')) {
             return \App\Models\BuyerProfile::where('user_id', $user->id)->exists();
@@ -64,8 +75,8 @@ class KycRequest extends FormRequest
         if ($user->hasRole('logistics')) {
             return \App\Models\LogisticsProfile::where('user_id', $user->id)->exists();
         }
-        if ($user->hasRole('field-officer')) {
-            return \App\Models\FieldOfficerProfile::where('user_id', $user->id)->exists();
+        if ($user->hasRole('admin')) {
+            return \App\Models\AdminProfile::where('user_id', $user->id)->exists();
         }
         return false;
     }
@@ -77,7 +88,7 @@ class KycRequest extends FormRequest
             'bvn.size' => 'BVN must be exactly 11 digits.',
             'nin.required' => 'National Identity Number is required.',
             'nin.size' => 'NIN must be exactly 11 digits.',
-            'nepc_certificate.required' => 'NEPC Certificate is required for exporters.',
+            'nepc_certificate.required' => 'NEPC Certificate is required for sellers.',
             'git_insurance.required' => 'Goods in Transit Insurance is required for logistics partners.',
             'cac_document.required' => 'CAC Certificate is required.',
             'cac_document.file' => 'CAC Certificate must be a valid file.',

@@ -12,7 +12,7 @@
   <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
     <thead>
       <tr style="text-align: left; border-bottom: 1px solid var(--line);">
-        <th style="padding: 10px 5px;">Exporter</th>
+        <th style="padding: 10px 5px;">Seller</th>
         <th style="padding: 10px 5px;">Product</th>
         <th style="padding: 10px 5px;">Quantity</th>
         <th style="padding: 10px 5px;">Destination</th>
@@ -25,7 +25,7 @@
       @forelse($quotes as $quote)
         <tr style="border-bottom: 1px solid var(--soft);">
           <td style="padding: 12px 5px;">
-            <strong>{{ $quote->product->exporterProfile->business_name ?? 'Unknown' }}</strong>
+            <strong>{{ $quote->product->sellerProfile->business_name ?? 'Unknown' }}</strong>
           </td>
           <td style="padding: 12px 5px;">
             <strong>{{ $quote->product->name ?? 'Deleted Product' }}</strong>

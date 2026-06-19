@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\QuoteRequest;
 use App\Models\Product;
 use App\Models\BuyerProfile;
-use App\Models\ExporterProfile;
+use App\Models\SellerProfile;
 use App\Models\AtexAuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,23 +17,23 @@ class QuoteRequestController extends Controller
     {
         $user = Auth::user();
         
-        if ($user->hasRole('super-admin') || $user->hasRole('field-officer')) {
-            $quotes = QuoteRequest::with(['buyerProfile', 'product.exporterProfile'])->latest()->get();
+        if ($user->hasRole('super-admin') || $user->hasRole('admin')) {
+            $quotes = QuoteRequest::with(['buyerProfile', 'product.sellerProfile'])->latest()->get();
             return view('buyer.quotes.admin', compact('quotes'));
         }
 
-        if ($user->hasRole('exporter')) {
-            $profile = ExporterProfile::where('user_id', $user->id)->first();
+        if ($user->hasRole('seller')) {
+            $profile = SellerProfile::where('user_id', $user->id)->first();
             $profileId = $profile->id ?? 0;
             $quotes = QuoteRequest::whereHas('product', function ($query) use ($profileId) {
-                $query->where('exporter_profile_id', $profileId);
+                $query->where('seller_profile_id', $profileId);
             })->with(['buyerProfile', 'product'])->latest()->get();
-            return view('buyer.quotes.exporter', compact('quotes'));
+            return view('buyer.quotes.seller', compact('quotes'));
         }
 
         if ($user->hasRole('buyer')) {
             $profile = BuyerProfile::where('user_id', $user->id)->first();
-            $quotes = QuoteRequest::where('buyer_profile_id', $profile->id ?? 0)->with('product.exporterProfile')->latest()->get();
+            $quotes = QuoteRequest::where('buyer_profile_id', $profile->id ?? 0)->with('product.sellerProfile')->latest()->get();
             return view('buyer.quotes.buyer', compact('quotes'));
         }
 
@@ -48,7 +48,7 @@ class QuoteRequestController extends Controller
         }
 
         $productId = $request->product_id;
-        $product = Product::with('exporterProfile')->findOrFail($productId);
+        $product = Product::with('sellerProfile')->findOrFail($productId);
         
         return view('buyer.quotes.create', compact('product'));
     }
@@ -104,12 +104,12 @@ class QuoteRequestController extends Controller
     public function show($id)
     {
         $user = Auth::user();
-        $quote = QuoteRequest::with(['buyerProfile.user', 'product.exporterProfile.user'])->findOrFail($id);
+        $quote = QuoteRequest::with(['buyerProfile.user', 'product.sellerProfile.user'])->findOrFail($id);
 
         // Security check
-        if ($user->hasRole('exporter')) {
-            $profile = ExporterProfile::where('user_id', $user->id)->first();
-            if ($quote->product->exporter_profile_id !== $profile->id) {
+        if ($user->hasRole('seller')) {
+            $profile = SellerProfile::where('user_id', $user->id)->first();
+            if ($quote->product->seller_profile_id !== $profile->id) {
                 abort(403);
             }
         } elseif ($user->hasRole('buyer')) {
@@ -125,7 +125,7 @@ class QuoteRequestController extends Controller
     public function respond(Request $request, $id)
     {
         $user = Auth::user();
-        if (!$user->hasRole('exporter')) {
+        if (!$user->hasRole('seller')) {
             return redirect()->back()->with('error', 'Unauthorized action.');
         }
 
@@ -136,8 +136,8 @@ class QuoteRequestController extends Controller
 
         $quote = QuoteRequest::findOrFail($id);
         
-        $profile = ExporterProfile::where('user_id', $user->id)->first();
-        if ($quote->product->exporter_profile_id !== $profile->id) {
+        $profile = SellerProfile::where('user_id', $user->id)->first();
+        if ($quote->product->seller_profile_id !== $profile->id) {
             abort(403);
         }
 

@@ -62,12 +62,12 @@
     $active = $active ?? '';
 
     if ($user) {
-        if ($user->hasRole('super-admin') || $user->hasRole('field-officer')) {
-            $role = $user->hasRole('super-admin') ? 'super-admin' : 'field-officer';
+        if ($user->hasRole('super-admin') || $user->hasRole('admin')) {
+            $role = $user->hasRole('super-admin') ? 'super-admin' : 'admin';
             $items = [
                 ['route' => 'admin.dashboard', 'label' => 'Dashboard', 'icon' => 'layout-dashboard'],
             ];
-            if ($user->hasRole('field-officer')) {
+            if ($user->hasRole('admin')) {
                 $items[] = ['route' => 'kyc.onboarding', 'label' => 'KYC Profile', 'icon' => 'file-check-2'];
             }
             $items = array_merge($items, [
@@ -82,8 +82,8 @@
                 ['route' => 'admin.settlements.index', 'label' => 'Settlements', 'icon' => 'wallet'],
                 ['route' => 'admin.audit.index', 'label' => 'Audit Logs', 'icon' => 'clipboard-list'],
             ]);
-        } elseif ($user->hasRole('exporter')) {
-            $role = 'exporter';
+        } elseif ($user->hasRole('seller')) {
+            $role = 'seller';
             $items = [
                 ['route' => 'admin.dashboard', 'label' => 'Dashboard', 'icon' => 'layout-dashboard'],
                 ['route' => 'admin.profile.show', 'label' => 'My Profile', 'icon' => 'user'],
@@ -163,6 +163,10 @@
                 </div>
                 
                 <div class="flex items-center space-x-4">
+                    @if(Auth::check() && !Auth::user()->hasRole('seller') && !Auth::user()->hasRole('admin') && !Auth::user()->hasRole('super-admin'))
+                        <a href="{{ route('seller.onboarding') }}" class="text-sm font-medium text-green-600 hover:text-green-800 transition-colors hidden sm:block">Become a Seller</a>
+                        <div class="h-8 w-px bg-gray-200 hidden sm:block"></div>
+                    @endif
                     <a href="{{ route('home') }}" class="text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors hidden sm:block">Back to Landing</a>
                     <div class="h-8 w-px bg-gray-200 hidden sm:block"></div>
                     <form action="{{ route('logout') }}" method="POST">

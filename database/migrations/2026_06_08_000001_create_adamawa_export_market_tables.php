@@ -11,16 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // 1. Categories Table
-        Schema::create('categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('slug')->unique();
-            $table->string('status', 20)->default('active');
-        });
-
-        // 2. Exporter Profiles Table
-        Schema::create('exporter_profiles', function (Blueprint $table) {
+        // 2. Seller Profiles Table
+        Schema::create('seller_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
             $table->string('business_name');
@@ -42,10 +34,13 @@ return new class extends Migration
         Schema::create('buyer_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
-            $table->string('company_name')->nullable();
-            $table->string('buyer_type', 100)->default('company');
-            $table->string('country');
-            $table->string('verification_status', 20)->default('pending');
+            $table->string('phone_number')->nullable();
+            $table->text('shipping_address')->nullable();
+            $table->text('billing_address')->nullable();
+            $table->string('city')->nullable();
+            $table->string('state')->nullable();
+            $table->string('zip_code')->nullable();
+            $table->string('country')->nullable();
             $table->timestamps();
         });
 
@@ -65,8 +60,7 @@ return new class extends Migration
         // 5. Products Table
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('exporter_profile_id')->constrained('exporter_profiles')->onDelete('cascade');
-            $table->foreignId('category_id')->constrained('categories');
+            $table->foreignId('seller_profile_id')->constrained('seller_profiles')->onDelete('cascade');
             $table->string('name');
             $table->text('description');
             $table->string('hs_code', 100)->nullable();
@@ -128,7 +122,7 @@ return new class extends Migration
             $table->foreignId('quote_request_id')->nullable()->constrained('quote_requests')->onDelete('set null');
             $table->foreignId('product_id')->nullable()->constrained('products')->onDelete('set null');
             $table->foreignId('buyer_profile_id')->constrained('buyer_profiles');
-            $table->foreignId('exporter_profile_id')->constrained('exporter_profiles');
+            $table->foreignId('seller_profile_id')->constrained('seller_profiles');
             $table->string('order_quantity', 100)->nullable();
             $table->string('destination_location')->nullable();
             $table->string('total_amount', 100)->nullable();
@@ -148,7 +142,7 @@ return new class extends Migration
         // 9. Fulfillment Inventory Table
         Schema::create('fulfillment_inventory', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('exporter_profile_id')->constrained('exporter_profiles')->onDelete('cascade');
+            $table->foreignId('seller_profile_id')->constrained('seller_profiles')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->string('brand_name')->nullable();
             $table->string('seller_sku', 100)->nullable();
@@ -168,7 +162,7 @@ return new class extends Migration
         Schema::create('settlements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->unique()->constrained('orders')->onDelete('cascade');
-            $table->foreignId('exporter_profile_id')->constrained('exporter_profiles')->onDelete('cascade');
+            $table->foreignId('seller_profile_id')->constrained('seller_profiles')->onDelete('cascade');
             $table->decimal('gross_amount', 12, 2)->default(0.00);
             $table->decimal('commission_amount', 12, 2)->default(0.00);
             $table->decimal('tax_amount', 12, 2)->default(0.00);
@@ -223,7 +217,6 @@ return new class extends Migration
         Schema::dropIfExists('products');
         Schema::dropIfExists('logistics_profiles');
         Schema::dropIfExists('buyer_profiles');
-        Schema::dropIfExists('exporter_profiles');
-        Schema::dropIfExists('categories');
+        Schema::dropIfExists('seller_profiles');
     }
 };

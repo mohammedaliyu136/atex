@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\FulfillmentInventory;
-use App\Models\ExporterProfile;
+use App\Models\SellerProfile;
 use App\Models\Product;
 use App\Models\AtexAuditLog;
 use Illuminate\Http\Request;
@@ -15,26 +15,26 @@ class InventoryController extends Controller
     public function index()
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 
-        $records = FulfillmentInventory::with(['exporterProfile', 'product'])->latest()->get();
-        $exporters = ExporterProfile::all();
+        $records = FulfillmentInventory::with(['sellerProfile', 'product'])->latest()->get();
+        $sellers = SellerProfile::all();
         $products = Product::where('status', 'approved')->get();
 
-        return view('admin.inventory.index', compact('records', 'exporters', 'products'));
+        return view('admin.inventory.index', compact('records', 'sellers', 'products'));
     }
 
     public function receive(Request $request)
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 
         $request->validate([
-            'exporter_profile_id' => 'required|exists:exporter_profiles,id',
+            'seller_profile_id' => 'required|exists:seller_profiles,id',
             'product_id' => 'required|exists:products,id',
             'quantity_received' => 'required|integer|min:1',
             'unit_label' => 'required|string|max:50',
@@ -43,7 +43,7 @@ class InventoryController extends Controller
         ]);
 
         $inv = FulfillmentInventory::create([
-            'exporter_profile_id' => $request->exporter_profile_id,
+            'seller_profile_id' => $request->seller_profile_id,
             'product_id' => $request->product_id,
             'brand_name' => $request->brand_name,
             'seller_sku' => $request->seller_sku,

@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\ExporterProfile;
+use App\Models\SellerProfile;
 use App\Models\BuyerProfile;
 use App\Models\LogisticsProfile;
-use App\Models\FieldOfficerProfile;
+use App\Models\AdminProfile;
 use App\Models\Product;
 use App\Models\Document;
 use App\Models\QuoteRequest;
@@ -26,12 +26,11 @@ class DashboardController extends Controller
         $metrics = [
             'users' => User::count(),
             'pending_users' => User::where('status', 'pending')->count(),
-            'exporters' => ExporterProfile::count(),
+            'sellers' => SellerProfile::count(),
             'buyers' => BuyerProfile::count(),
-            'pending_kyc' => ExporterProfile::whereIn('verification_status', ['pending', 'submitted'])->count()
-                + BuyerProfile::whereIn('verification_status', ['pending', 'submitted'])->count()
+            'pending_kyc' => SellerProfile::whereIn('verification_status', ['pending', 'submitted'])->count()
                 + LogisticsProfile::whereIn('verification_status', ['pending', 'submitted'])->count()
-                + FieldOfficerProfile::whereIn('verification_status', ['pending', 'submitted'])->count(),
+                + AdminProfile::whereIn('verification_status', ['pending', 'submitted'])->count(),
             'products' => Product::count(),
             'pending_documents' => Document::where('status', 'pending')->count(),
             'open_quotes' => QuoteRequest::where('status', 'open')->count(),
@@ -45,13 +44,13 @@ class DashboardController extends Controller
         return view('admin.dashboard.admin', compact('metrics', 'user'));
     }
 
-    public function exporterDashboard()
+    public function sellerDashboard()
     {
         $user = Auth::user();
-        $profile = ExporterProfile::where('user_id', $user->id)->first();
+        $profile = SellerProfile::where('user_id', $user->id)->first();
         if (!$profile) {
             // Create profile dynamically if missing
-            $profile = ExporterProfile::create([
+            $profile = SellerProfile::create([
                 'user_id' => $user->id,
                 'business_name' => $user->name,
                 'lga' => 'Yola North',
@@ -62,23 +61,23 @@ class DashboardController extends Controller
         $profileId = $profile->id;
 
         $metrics = [
-            'products' => Product::where('exporter_profile_id', $profileId)->count(),
-            'pending_products' => Product::where('exporter_profile_id', $profileId)->where('status', 'pending_review')->count(),
-            'documents' => Document::where('owner_type', 'exporter')->where('owner_id', $profileId)->count(),
-            'pending_documents' => Document::where('owner_type', 'exporter')->where('owner_id', $profileId)->where('status', 'pending')->count(),
+            'products' => Product::where('seller_profile_id', $profileId)->count(),
+            'pending_products' => Product::where('seller_profile_id', $profileId)->where('status', 'pending_review')->count(),
+            'documents' => Document::where('owner_type', 'seller')->where('owner_id', $profileId)->count(),
+            'pending_documents' => Document::where('owner_type', 'seller')->where('owner_id', $profileId)->where('status', 'pending')->count(),
             'quotes' => QuoteRequest::whereHas('product', function ($query) use ($profileId) {
-                $query->where('exporter_profile_id', $profileId);
+                $query->where('seller_profile_id', $profileId);
             })->count(),
-            'orders' => Order::where('exporter_profile_id', $profileId)->count(),
-            'inventory_items' => FulfillmentInventory::where('exporter_profile_id', $profileId)->count(),
-            'payouts' => Settlement::where('exporter_profile_id', $profileId)->count(),
-            'pending_payout' => Settlement::where('exporter_profile_id', $profileId)->whereIn('status', ['pending', 'processing'])->sum('net_payout_amount'),
-            'credited_payout' => Settlement::where('exporter_profile_id', $profileId)->where('status', 'credited')->sum('net_payout_amount'),
-            'export_value' => Order::where('exporter_profile_id', $profileId)->sum('total_amount'),
+            'orders' => Order::where('seller_profile_id', $profileId)->count(),
+            'inventory_items' => FulfillmentInventory::where('seller_profile_id', $profileId)->count(),
+            'payouts' => Settlement::where('seller_profile_id', $profileId)->count(),
+            'pending_payout' => Settlement::where('seller_profile_id', $profileId)->whereIn('status', ['pending', 'processing'])->sum('net_payout_amount'),
+            'credited_payout' => Settlement::where('seller_profile_id', $profileId)->where('status', 'credited')->sum('net_payout_amount'),
+            'export_value' => Order::where('seller_profile_id', $profileId)->sum('total_amount'),
             'readiness' => $profile->readiness_score,
         ];
 
-        return view('admin.dashboard.exporter', compact('metrics', 'profile', 'user'));
+        return view('admin.dashboard.seller', compact('metrics', 'profile', 'user'));
     }
 
     public function logisticsDashboard()
@@ -109,6 +108,13 @@ class DashboardController extends Controller
 
     public function buyerDashboard()
     {
-        return redirect('/#marketplace');
+        $user = Auth::user();
+        $metrics = [
+            'total_orders' => 0,
+            'active_rfqs' => 0,
+            'saved_items' => 0,
+            'total_spent' => 0.00,
+        ];
+        return view('admin.dashboard.buyer', compact('metrics', 'user'));
     }
 }

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        $tables = ['exporter_profiles', 'buyer_profiles', 'logistics_profiles', 'field_officer_profiles'];
+        $tables = ['seller_profiles', 'logistics_profiles'];
         foreach ($tables as $table) {
             Schema::table($table, function (Blueprint $table) {
                 $table->text('rejection_reason')->nullable();
@@ -21,7 +21,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        $tables = ['exporter_profiles', 'buyer_profiles', 'logistics_profiles', 'field_officer_profiles'];
+        $tables = ['seller_profiles', 'logistics_profiles'];
         foreach ($tables as $table) {
             Schema::table($table, function (Blueprint $table) {
                 $table->dropColumn('rejection_reason');

@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ExporterProfile;
+use App\Models\SellerProfile;
 use App\Models\BuyerProfile;
 use App\Models\LogisticsProfile;
-use App\Models\FieldOfficerProfile;
+use App\Models\AdminProfile;
 use App\Models\Document;
 use App\Models\AtexAuditLog;
 use App\Events\KycApproved;
@@ -21,10 +21,10 @@ class KycController extends Controller
     private function getProfileModel(string $type)
     {
         return match ($type) {
-            'exporter' => new ExporterProfile,
+            'seller' => new SellerProfile,
             'buyer' => new BuyerProfile,
             'logistics' => new LogisticsProfile,
-            'field-officer' => new FieldOfficerProfile,
+            'admin' => new AdminProfile,
             default => null,
         };
     }
@@ -32,10 +32,10 @@ class KycController extends Controller
     private function getProfileClass(string $type): ?string
     {
         return match ($type) {
-            'exporter' => ExporterProfile::class,
+            'seller' => SellerProfile::class,
             'buyer' => BuyerProfile::class,
             'logistics' => LogisticsProfile::class,
-            'field-officer' => FieldOfficerProfile::class,
+            'admin' => AdminProfile::class,
             default => null,
         };
     }
@@ -43,50 +43,49 @@ class KycController extends Controller
     public function index()
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 
         $profiles = collect();
 
         $profileTypes = [
-            'exporter' => ExporterProfile::class,
-            'buyer' => BuyerProfile::class,
+            'seller' => SellerProfile::class,
             'logistics' => LogisticsProfile::class,
-            'field-officer' => FieldOfficerProfile::class,
+            'admin' => AdminProfile::class,
         ];
 
         foreach ($profileTypes as $type => $class) {
             $records = $class::with('user')->get()->map(function ($profile) use ($type) {
                 $org = match ($type) {
-                    'exporter' => $profile->business_name,
+                    'seller' => $profile->business_name,
                     'buyer' => $profile->company_name ?: 'Buyer Account',
                     'logistics' => $profile->company_name,
-                    'field-officer' => $profile->full_name ?: 'Field Officer',
+                    'admin' => $profile->full_name ?: 'Admin',
                     default => 'Unknown',
                 };
 
                 $category = match ($type) {
-                    'exporter' => $profile->business_type,
+                    'seller' => $profile->business_type,
                     'buyer' => $profile->buyer_type,
                     'logistics' => 'logistics',
-                    'field-officer' => 'field-officer',
+                    'admin' => 'admin',
                     default => null,
                 };
 
                 $location = match ($type) {
-                    'exporter' => $profile->lga,
+                    'seller' => $profile->lga,
                     'buyer' => $profile->country,
                     'logistics' => $profile->coverage_regions,
-                    'field-officer' => $profile->address,
+                    'admin' => $profile->address,
                     default => null,
                 };
 
                 $labels = [
-                    'exporter' => 'Exporter',
+                    'seller' => 'Seller',
                     'buyer' => 'Buyer',
                     'logistics' => 'Logistics',
-                    'field-officer' => 'Field Officer',
+                    'admin' => 'Admin',
                 ];
 
                 return [
@@ -121,12 +120,12 @@ class KycController extends Controller
     public function review(Request $request)
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 
         $request->validate([
-            'profile_type' => 'required|in:exporter,buyer,logistics,field-officer',
+            'profile_type' => 'required|in:seller,logistics,admin',
             'profile_id' => 'required|integer',
             'status' => 'required|in:approved,rejected,pending',
             'reason' => 'nullable|string|max:1000',
@@ -149,7 +148,7 @@ class KycController extends Controller
         if ($status === 'approved') {
             $updateData['approved_at'] = now();
             $updateData['rejection_reason'] = null;
-            if ($profileType === 'exporter') {
+            if ($profileType === 'seller') {
                 $updateData['seller_program_status'] = 'approved';
             }
         } elseif ($status === 'rejected') {
@@ -205,7 +204,7 @@ class KycController extends Controller
     public function show($type, $id)
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 
@@ -223,7 +222,7 @@ class KycController extends Controller
     public function reviewDocument(Request $request, $id)
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 
@@ -246,12 +245,12 @@ class KycController extends Controller
     public function reviewAllDocuments(Request $request)
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 
         $request->validate([
-            'profile_type' => 'required|in:exporter,buyer,logistics,field-officer',
+            'profile_type' => 'required|in:seller,logistics,admin',
             'profile_id' => 'required|integer',
             'status' => 'required|in:approved,rejected',
             'comment' => 'nullable|string|max:1000',
@@ -299,12 +298,12 @@ class KycController extends Controller
     public function reviewRegulatory(Request $request)
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 
         $request->validate([
-            'profile_type' => 'required|in:exporter,buyer,logistics,field-officer',
+            'profile_type' => 'required|in:seller,logistics,admin',
             'profile_id' => 'required|integer',
             'fields' => 'nullable|array',
             'fields.*.status' => 'nullable|in:approved,rejected',

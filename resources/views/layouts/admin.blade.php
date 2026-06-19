@@ -106,7 +106,7 @@
                 <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto fancy-scroll">
                     @php
                         $dashboardRoute = 'admin.dashboard';
-                        if(auth()->user()->hasRole('exporter')) $dashboardRoute = 'exporter.dashboard';
+                        if(auth()->user()->hasRole('seller')) $dashboardRoute = 'seller.dashboard';
                         elseif(auth()->user()->hasRole('buyer')) $dashboardRoute = 'buyer.dashboard';
                         elseif(auth()->user()->hasRole('logistics')) $dashboardRoute = 'logistics.dashboard';
                     @endphp
@@ -126,9 +126,9 @@
                         <i data-lucide="file-check-2" class="w-5 h-5 mr-3"></i>
                         KYC Verification
                     </a>
-                    <a href="{{ route('admin.exporters.index') }}" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl {{ request()->routeIs('admin.exporters.*') ? 'sidebar-active' : 'text-white/60 hover:bg-white/10 hover:text-white' }}">
+                    <a href="{{ route('admin.sellers.index') }}" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl {{ request()->routeIs('admin.sellers.*') ? 'sidebar-active' : 'text-white/60 hover:bg-white/10 hover:text-white' }}">
                         <i data-lucide="briefcase" class="w-5 h-5 mr-3"></i>
-                        Exporters
+                        Sellers
                     </a>
                     <a href="{{ route('admin.buyers.index') }}" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl {{ request()->routeIs('admin.buyers.*') ? 'sidebar-active' : 'text-white/60 hover:bg-white/10 hover:text-white' }}">
                         <i data-lucide="shopping-bag" class="w-5 h-5 mr-3"></i>
@@ -188,13 +188,17 @@
                         <i data-lucide="shield-check" class="w-5 h-5 mr-3"></i>
                         Roles & Permissions
                     </a>
+                    <a href="{{ route('admin.legal-documents.index') }}" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl {{ request()->routeIs('admin.legal-documents.*') ? 'sidebar-active' : 'text-white/60 hover:bg-white/10 hover:text-white' }}">
+                        <i data-lucide="scale" class="w-5 h-5 mr-3"></i>
+                        Legal Documents
+                    </a>
                     <a href="{{ route('admin.settings.index') }}" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl {{ request()->routeIs('admin.settings.*') ? 'sidebar-active' : 'text-white/60 hover:bg-white/10 hover:text-white' }}">
                         <i data-lucide="settings" class="w-5 h-5 mr-3"></i>
                         System Settings
                     </a>
                     @endhasanyrole
 
-                    @hasrole('exporter')
+                    @hasrole('seller')
                     <div class="pt-4 pb-2 text-xs font-semibold tracking-wider uppercase text-white/30">My Export Business</div>
                     
                     <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
@@ -250,9 +254,9 @@
                         <i data-lucide="credit-card" class="w-5 h-5 mr-3"></i>
                         Payment History
                     </a>
-                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                    <a href="{{ route('buyer.profile.show') }}" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl {{ request()->routeIs('buyer.profile.*') ? 'sidebar-active' : 'text-white/60 hover:bg-white/10 hover:text-white' }}">
                         <i data-lucide="user" class="w-5 h-5 mr-3"></i>
-                        Buyer Profile
+                        Profile
                     </a>
                     @endhasrole
 
@@ -282,8 +286,13 @@
                     @endhasrole
                 </nav>
 
-                <!-- User Profile -->
-                <a href="{{ route('admin.profile') }}" class="block p-4 m-4 rounded-2xl transition-all hover:bg-white/10 group" style="background-color: rgba(255,255,255,0.05)">
+                @php
+                    $bottomProfileRoute = 'admin.profile';
+                    if(auth()->user()->hasRole('seller')) $bottomProfileRoute = 'seller.profile';
+                    elseif(auth()->user()->hasRole('buyer')) $bottomProfileRoute = 'buyer.profile.show';
+                    elseif(auth()->user()->hasRole('logistics')) $bottomProfileRoute = 'logistics.profile';
+                @endphp
+                <a href="{{ route($bottomProfileRoute) }}" class="block p-4 m-4 rounded-2xl transition-all hover:bg-white/10 group" style="background-color: rgba(255,255,255,0.05)">
                     <div class="flex items-center">
                         <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-inner transition-transform group-hover:scale-110" style="background-color: var(--primary-color)">
                             {{ substr(auth()->user()->name ?? 'A', 0, 1) }}

@@ -14,7 +14,7 @@
       <tr style="text-align: left; border-bottom: 1px solid var(--line);">
         <th style="padding: 10px 5px;">Order No.</th>
         <th style="padding: 10px 5px;">Product</th>
-        <th style="padding: 10px 5px;">Exporter</th>
+        <th style="padding: 10px 5px;">Seller</th>
         <th style="padding: 10px 5px;">Destination</th>
         <th style="padding: 10px 5px;">Tracking Status</th>
         <th style="padding: 10px 5px; text-align: right;">Action</th>
@@ -32,7 +32,7 @@
             <small class="muted">Qty: {{ $order->order_quantity }}</small>
           </td>
           <td style="padding: 12px 5px;">
-            {{ $order->exporterProfile->business_name ?? 'Exporter' }}
+            {{ $order->sellerProfile->business_name ?? 'Seller' }}
           </td>
           <td style="padding: 12px 5px;">
             {{ $order->destination_location }}

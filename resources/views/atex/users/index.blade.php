@@ -25,8 +25,8 @@
       @forelse($accounts as $account)
         @php
           $org = '-';
-          if ($account->exporterProfile) {
-              $org = $account->exporterProfile->business_name;
+          if ($account->sellerProfile) {
+              $org = $account->sellerProfile->business_name;
           } elseif ($account->buyerProfile) {
               $org = $account->buyerProfile->company_name ?: 'Buyer Account';
           } elseif ($account->logisticsProfile) {

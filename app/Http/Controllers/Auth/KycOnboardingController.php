@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\KycRequest;
-use App\Models\ExporterProfile;
+use App\Models\SellerProfile;
 use App\Models\BuyerProfile;
 use App\Models\LogisticsProfile;
-use App\Models\FieldOfficerProfile;
+use App\Models\AdminProfile;
 use App\Models\Document;
 use App\Events\KycSubmitted;
 use Illuminate\Support\Facades\Auth;
@@ -30,6 +30,14 @@ class KycOnboardingController extends Controller
     public function store(KycRequest $request)
     {
         $user = Auth::user();
+
+        if ($user->hasRole('buyer')) {
+            BuyerProfile::updateOrCreate(
+                ['user_id' => $user->id],
+                $request->only(['phone_number', 'gender', 'shipping_address', 'billing_address', 'city', 'state', 'zip_code', 'country'])
+            );
+            return redirect()->route('dashboard')->with('success', 'Profile completed successfully.');
+        }
 
         $existingProfile = $this->getProfile($user);
 
@@ -61,24 +69,15 @@ class KycOnboardingController extends Controller
         $profile = null;
         $profileType = '';
 
-        if ($user->hasRole('exporter')) {
+        if ($user->hasRole('seller')) {
             if (!$existingProfile || $request->filled('business_name')) {
                 $data['business_name'] = $request->business_name;
             }
             if (!$existingProfile || $request->filled('trade_capacity')) {
                 $data['trade_capacity'] = $request->trade_capacity;
             }
-            $profile = ExporterProfile::updateOrCreate(['user_id' => $user->id], $data);
-            $profileType = 'exporter';
-        } elseif ($user->hasRole('buyer')) {
-            if (!$existingProfile || $request->filled('business_name')) {
-                $data['company_name'] = $request->business_name;
-            }
-            if (!$existingProfile || $request->filled('trade_capacity')) {
-                $data['trade_capacity'] = $request->trade_capacity;
-            }
-            $profile = BuyerProfile::updateOrCreate(['user_id' => $user->id], $data);
-            $profileType = 'buyer';
+            $profile = SellerProfile::updateOrCreate(['user_id' => $user->id], $data);
+            $profileType = 'seller';
         } elseif ($user->hasRole('logistics')) {
             if (!$existingProfile || $request->filled('business_name')) {
                 $data['company_name'] = $request->business_name;
@@ -88,7 +87,7 @@ class KycOnboardingController extends Controller
             }
             $profile = LogisticsProfile::updateOrCreate(['user_id' => $user->id], $data);
             $profileType = 'logistics';
-        } elseif ($user->hasRole('field-officer')) {
+        } elseif ($user->hasRole('admin')) {
             if (!$existingProfile || $request->filled('full_name')) {
                 $data['full_name'] = $request->full_name;
             }
@@ -98,8 +97,8 @@ class KycOnboardingController extends Controller
             if (!$existingProfile || $request->filled('identification_number')) {
                 $data['identification_number'] = $request->identification_number;
             }
-            $profile = FieldOfficerProfile::updateOrCreate(['user_id' => $user->id], $data);
-            $profileType = 'field-officer';
+            $profile = AdminProfile::updateOrCreate(['user_id' => $user->id], $data);
+            $profileType = 'admin';
         }
 
         if ($profile && $profileType) {
@@ -107,7 +106,7 @@ class KycOnboardingController extends Controller
             $this->uploadDocument($request, 'valid_id', 'Valid Identification', $profileType, $profile->id);
             $this->uploadDocument($request, 'proof_of_address', 'Proof of Address', $profileType, $profile->id);
 
-            if ($user->hasRole('exporter')) {
+            if ($user->hasRole('seller')) {
                 $this->uploadDocument($request, 'nepc_certificate', 'NEPC Certificate', $profileType, $profile->id);
             }
             if ($user->hasRole('logistics')) {
@@ -127,8 +126,8 @@ class KycOnboardingController extends Controller
 
     private function getProfile($user)
     {
-        if ($user->hasRole('exporter')) {
-            return ExporterProfile::where('user_id', $user->id)->first();
+        if ($user->hasRole('seller')) {
+            return SellerProfile::where('user_id', $user->id)->first();
         }
         if ($user->hasRole('buyer')) {
             return BuyerProfile::where('user_id', $user->id)->first();
@@ -136,8 +135,8 @@ class KycOnboardingController extends Controller
         if ($user->hasRole('logistics')) {
             return LogisticsProfile::where('user_id', $user->id)->first();
         }
-        if ($user->hasRole('field-officer')) {
-            return FieldOfficerProfile::where('user_id', $user->id)->first();
+        if ($user->hasRole('admin')) {
+            return AdminProfile::where('user_id', $user->id)->first();
         }
         return null;
     }

@@ -19,17 +19,17 @@ Route::post('/register', [\App\Http\Controllers\Auth\RegisteredUserController::c
 
 Route::get('/dashboard', function () {
     $user = \Illuminate\Support\Facades\Auth::user();
-    if ($user->hasRole('super-admin') || $user->hasRole('field-officer')) {
+    if ($user->hasRole('super-admin') || $user->hasRole('admin')) {
         return redirect()->route('admin.dashboard');
-    } elseif ($user->hasRole('exporter')) {
-        return redirect()->route('exporter.dashboard');
+    } elseif ($user->hasRole('seller')) {
+        return redirect()->route('seller.dashboard');
     } elseif ($user->hasRole('buyer')) {
         return redirect()->route('buyer.dashboard');
     } elseif ($user->hasRole('logistics')) {
         return redirect()->route('logistics.dashboard');
     }
     return redirect('/');
-})->name('dashboard');
+})->name('dashboard')->middleware(['auth', 'legal_acceptance']);
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.post');
@@ -58,20 +58,34 @@ Route::middleware('auth')->group(function () {
     Route::post('/security/password-update', [SecurityEnforcementController::class, 'updatePassword'])->name('security.password.update');
     Route::get('/security/2fa-setup', [SecurityEnforcementController::class, 'show2faSetup'])->name('security.2fa');
     Route::post('/security/2fa-confirm', [SecurityEnforcementController::class, 'confirm2fa'])->name('security.2fa.confirm');
+
+    Route::get('/legal-acceptance', [\App\Http\Controllers\LegalAcceptanceController::class, 'show'])->name('legal-acceptance.show');
+    Route::post('/legal-acceptance', [\App\Http\Controllers\LegalAcceptanceController::class, 'store'])->name('legal-acceptance.store');
 });
 
-Route::middleware(['auth', 'verified', 'security_policy'])->group(function () {
+Route::middleware(['auth', 'verified', 'security_policy', 'legal_acceptance'])->group(function () {
     Route::get('/kyc/onboarding', [\App\Http\Controllers\Auth\KycOnboardingController::class, 'show'])->name('kyc.onboarding');
     Route::post('/kyc/onboarding', [\App\Http\Controllers\Auth\KycOnboardingController::class, 'store'])->name('kyc.onboarding.store');
+
+    Route::get('/become-a-seller', [\App\Http\Controllers\SellerOnboardingController::class, 'show'])->name('seller.onboarding');
+    Route::post('/become-a-seller', [\App\Http\Controllers\SellerOnboardingController::class, 'store'])->name('seller.onboarding.store');
 });
 
-Route::middleware(['auth', 'verified', 'security_policy', 'kyc_completed'])->group(function () {
-    Route::prefix('exporter')->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'exporterDashboard'])->name('exporter.dashboard');
+Route::middleware(['auth', 'verified', 'security_policy', 'kyc_completed', 'legal_acceptance'])->group(function () {
+    Route::prefix('seller')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'sellerDashboard'])->name('seller.dashboard');
     });
 
     Route::prefix('buyer')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'buyerDashboard'])->name('buyer.dashboard');
+        
+        // Profile Settings
+        Route::get('/profile', [\App\Http\Controllers\Buyer\ProfileController::class, 'show'])->name('buyer.profile.show');
+        Route::put('/profile/info', [\App\Http\Controllers\Buyer\ProfileController::class, 'updateInfo'])->name('buyer.profile.update-info');
+        Route::put('/profile/password', [\App\Http\Controllers\Buyer\ProfileController::class, 'updatePassword'])->name('buyer.profile.password');
+        Route::get('/profile/2fa', [\App\Http\Controllers\Buyer\ProfileController::class, 'showTwoFactor'])->name('buyer.profile.2fa');
+        Route::post('/profile/2fa/confirm', [\App\Http\Controllers\Buyer\ProfileController::class, 'confirmTwoFactor'])->name('buyer.profile.2fa.confirm');
+        Route::post('/profile/2fa/disable', [\App\Http\Controllers\Buyer\ProfileController::class, 'disableTwoFactor'])->name('buyer.profile.2fa.disable');
     });
 
     Route::prefix('logistics')->group(function () {
@@ -81,16 +95,16 @@ Route::middleware(['auth', 'verified', 'security_policy', 'kyc_completed'])->gro
     Route::prefix('admin')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
 
-    Route::get('/atex/profile', [\App\Http\Controllers\Exporter\ProfileController::class, 'show'])->name('admin.profile.show');
-    Route::post('/atex/profile', [\App\Http\Controllers\Exporter\ProfileController::class, 'update'])->name('admin.profile.update');
+    Route::get('/atex/profile', [\App\Http\Controllers\Seller\ProfileController::class, 'show'])->name('admin.profile.show');
+    Route::post('/atex/profile', [\App\Http\Controllers\Seller\ProfileController::class, 'update'])->name('admin.profile.update');
 
-    Route::get('/products', [\App\Http\Controllers\Exporter\ProductController::class, 'index'])->name('admin.products.index');
-    Route::post('/products', [\App\Http\Controllers\Exporter\ProductController::class, 'store'])->name('admin.products.store');
-    Route::post('/products/{id}/review', [\App\Http\Controllers\Exporter\ProductController::class, 'review'])->name('admin.products.review');
+    Route::get('/products', [\App\Http\Controllers\Seller\ProductController::class, 'index'])->name('admin.products.index');
+    Route::post('/products', [\App\Http\Controllers\Seller\ProductController::class, 'store'])->name('admin.products.store');
+    Route::post('/products/{id}/review', [\App\Http\Controllers\Seller\ProductController::class, 'review'])->name('admin.products.review');
 
-    Route::get('/documents', [\App\Http\Controllers\Exporter\DocumentController::class, 'index'])->name('admin.documents.index');
-    Route::post('/documents', [\App\Http\Controllers\Exporter\DocumentController::class, 'store'])->name('admin.documents.store');
-    Route::post('/documents/{id}/review', [\App\Http\Controllers\Exporter\DocumentController::class, 'review'])->name('admin.documents.review');
+    Route::get('/documents', [\App\Http\Controllers\Seller\DocumentController::class, 'index'])->name('admin.documents.index');
+    Route::post('/documents', [\App\Http\Controllers\Seller\DocumentController::class, 'store'])->name('admin.documents.store');
+    Route::post('/documents/{id}/review', [\App\Http\Controllers\Seller\DocumentController::class, 'review'])->name('admin.documents.review');
 
     Route::get('/quotes', [\App\Http\Controllers\Buyer\QuoteRequestController::class, 'index'])->name('admin.quotes.index');
     Route::get('/quotes/create', [\App\Http\Controllers\Buyer\QuoteRequestController::class, 'create'])->name('admin.quotes.create');
@@ -126,35 +140,41 @@ Route::middleware(['auth', 'verified', 'security_policy', 'kyc_completed'])->gro
     Route::post('/kyc/review-regulatory', [\App\Http\Controllers\Admin\KycController::class, 'reviewRegulatory'])->name('admin.kyc.review-regulatory');
 
     // Placeholders for missing prototype views
-        Route::get('exporters/trashed', [\App\Http\Controllers\Admin\ExporterController::class, 'trashed'])->name('admin.exporters.trashed');
-    Route::post('exporters/{id}/restore', [\App\Http\Controllers\Admin\ExporterController::class, 'restore'])->name('admin.exporters.restore');
-    Route::delete('exporters/{id}/force-delete', [\App\Http\Controllers\Admin\ExporterController::class, 'forceDelete'])->name('admin.exporters.force-delete');
-    Route::post('exporters/{id}/toggle-status', [\App\Http\Controllers\Admin\ExporterController::class, 'toggleStatus'])->name('admin.exporters.toggle-status');
-    Route::post('exporters/{id}/resend-welcome', [\App\Http\Controllers\Admin\ExporterController::class, 'resendWelcome'])->name('admin.exporters.resend-welcome');
-    Route::post('exporters/{id}/resend-verification', [\App\Http\Controllers\Admin\ExporterController::class, 'resendVerificationAdmin'])->name('admin.exporters.resend-verification');
-    Route::post('exporters/{id}/reset-2fa', [\App\Http\Controllers\Admin\ExporterController::class, 'resetTwoFactor'])->name('admin.exporters.reset-2fa');
-    Route::post('exporters/{id}/verify-email', [\App\Http\Controllers\Admin\ExporterController::class, 'verifyEmail'])->name('admin.exporters.verify-email');
-    Route::post('exporters/{id}/reset-password', [\App\Http\Controllers\Admin\ExporterController::class, 'resetPassword'])->name('admin.exporters.reset-password');
-    Route::get('exporters/{id}/auth-logs', [\App\Http\Controllers\Admin\ExporterController::class, 'authLogs'])->name('admin.exporters.auth-logs');
-    Route::get('exporters/all-auth-logs', [\App\Http\Controllers\Admin\ExporterController::class, 'allAuthLogs'])->name('admin.exporters.all-auth-logs');
-    Route::post('exporters/{id}/send-email', [\App\Http\Controllers\Admin\ExporterController::class, 'sendCustomEmail'])->name('admin.exporters.send-custom-email');
-    Route::post('exporters/bulk-action', [\App\Http\Controllers\Admin\ExporterController::class, 'bulkAction'])->name('admin.exporters.bulk-action');
-    Route::post('exporters/{id}/unlock', [\App\Http\Controllers\Admin\ExporterController::class, 'unlock'])->name('admin.exporters.unlock');
-    Route::resource('exporters', \App\Http\Controllers\Admin\ExporterController::class)->names('admin.exporters')->except(['create', 'store']);
-        Route::get('buyers/trashed', [\App\Http\Controllers\Admin\BuyerController::class, 'trashed'])->name('admin.buyers.trashed');
-    Route::post('buyers/{id}/restore', [\App\Http\Controllers\Admin\BuyerController::class, 'restore'])->name('admin.buyers.restore');
-    Route::delete('buyers/{id}/force-delete', [\App\Http\Controllers\Admin\BuyerController::class, 'forceDelete'])->name('admin.buyers.force-delete');
-    Route::post('buyers/{id}/toggle-status', [\App\Http\Controllers\Admin\BuyerController::class, 'toggleStatus'])->name('admin.buyers.toggle-status');
-    Route::post('buyers/{id}/resend-welcome', [\App\Http\Controllers\Admin\BuyerController::class, 'resendWelcome'])->name('admin.buyers.resend-welcome');
-    Route::post('buyers/{id}/resend-verification', [\App\Http\Controllers\Admin\BuyerController::class, 'resendVerificationAdmin'])->name('admin.buyers.resend-verification');
-    Route::post('buyers/{id}/reset-2fa', [\App\Http\Controllers\Admin\BuyerController::class, 'resetTwoFactor'])->name('admin.buyers.reset-2fa');
-    Route::post('buyers/{id}/verify-email', [\App\Http\Controllers\Admin\BuyerController::class, 'verifyEmail'])->name('admin.buyers.verify-email');
-    Route::post('buyers/{id}/reset-password', [\App\Http\Controllers\Admin\BuyerController::class, 'resetPassword'])->name('admin.buyers.reset-password');
-    Route::get('buyers/{id}/auth-logs', [\App\Http\Controllers\Admin\BuyerController::class, 'authLogs'])->name('admin.buyers.auth-logs');
-    Route::get('buyers/all-auth-logs', [\App\Http\Controllers\Admin\BuyerController::class, 'allAuthLogs'])->name('admin.buyers.all-auth-logs');
-    Route::post('buyers/{id}/send-email', [\App\Http\Controllers\Admin\BuyerController::class, 'sendCustomEmail'])->name('admin.buyers.send-custom-email');
-    Route::post('buyers/bulk-action', [\App\Http\Controllers\Admin\BuyerController::class, 'bulkAction'])->name('admin.buyers.bulk-action');
-    Route::post('buyers/{id}/unlock', [\App\Http\Controllers\Admin\BuyerController::class, 'unlock'])->name('admin.buyers.unlock');
+        Route::get('sellers/trashed', [\App\Http\Controllers\Admin\SellerController::class, 'trashed'])->name('admin.sellers.trashed');
+    Route::post('sellers/{id}/restore', [\App\Http\Controllers\Admin\SellerController::class, 'restore'])->name('admin.sellers.restore');
+    Route::delete('sellers/{id}/force-delete', [\App\Http\Controllers\Admin\SellerController::class, 'forceDelete'])->name('admin.sellers.force-delete');
+    Route::post('sellers/{id}/toggle-status', [\App\Http\Controllers\Admin\SellerController::class, 'toggleStatus'])->name('admin.sellers.toggle-status');
+    Route::post('sellers/{id}/resend-welcome', [\App\Http\Controllers\Admin\SellerController::class, 'resendWelcome'])->name('admin.sellers.resend-welcome');
+    Route::post('sellers/{id}/resend-verification', [\App\Http\Controllers\Admin\SellerController::class, 'resendVerificationAdmin'])->name('admin.sellers.resend-verification');
+    Route::post('sellers/{id}/reset-2fa', [\App\Http\Controllers\Admin\SellerController::class, 'resetTwoFactor'])->name('admin.sellers.reset-2fa');
+    Route::post('sellers/{id}/verify-email', [\App\Http\Controllers\Admin\SellerController::class, 'verifyEmail'])->name('admin.sellers.verify-email');
+    Route::post('sellers/{id}/reset-password', [\App\Http\Controllers\Admin\SellerController::class, 'resetPassword'])->name('admin.sellers.reset-password');
+    Route::get('sellers/{id}/auth-logs', [\App\Http\Controllers\Admin\SellerController::class, 'authLogs'])->name('admin.sellers.auth-logs');
+    Route::get('sellers/all-auth-logs', [\App\Http\Controllers\Admin\SellerController::class, 'allAuthLogs'])->name('admin.sellers.all-auth-logs');
+    Route::post('sellers/{id}/send-email', [\App\Http\Controllers\Admin\SellerController::class, 'sendCustomEmail'])->name('admin.sellers.send-custom-email');
+    Route::post('sellers/bulk-action', [\App\Http\Controllers\Admin\SellerController::class, 'bulkAction'])->name('admin.sellers.bulk-action');
+    Route::post('sellers/{id}/unlock', [\App\Http\Controllers\Admin\SellerController::class, 'unlock'])->name('admin.sellers.unlock');
+    Route::resource('sellers', \App\Http\Controllers\Admin\SellerController::class)->names('admin.sellers')->except(['create', 'store']);
+    Route::controller(\App\Http\Controllers\Admin\BuyerController::class)
+        ->prefix('buyers')
+        ->name('admin.buyers.')
+        ->group(function () {
+            Route::get('trashed', 'trashed')->name('trashed');
+            Route::get('all-auth-logs', 'allAuthLogs')->name('all-auth-logs');
+            Route::post('bulk-action', 'bulkAction')->name('bulk-action');
+            
+            Route::post('{id}/restore', 'restore')->name('restore');
+            Route::delete('{id}/force-delete', 'forceDelete')->name('force-delete');
+            Route::post('{id}/toggle-status', 'toggleStatus')->name('toggle-status');
+            Route::post('{id}/resend-welcome', 'resendWelcome')->name('resend-welcome');
+            Route::post('{id}/resend-verification', 'resendVerificationAdmin')->name('resend-verification');
+            Route::post('{id}/reset-2fa', 'resetTwoFactor')->name('reset-2fa');
+            Route::post('{id}/verify-email', 'verifyEmail')->name('verify-email');
+            Route::post('{id}/reset-password', 'resetPassword')->name('reset-password');
+            Route::get('{id}/auth-logs', 'authLogs')->name('auth-logs');
+            Route::post('{id}/send-email', 'sendCustomEmail')->name('send-custom-email');
+            Route::post('{id}/unlock', 'unlock')->name('unlock');
+        });
     Route::resource('buyers', \App\Http\Controllers\Admin\BuyerController::class)->names('admin.buyers')->except(['create', 'store']);
         Route::get('logistics/trashed', [\App\Http\Controllers\Admin\LogisticsController::class, 'trashed'])->name('admin.logistics.trashed');
     Route::post('logistics/{id}/restore', [\App\Http\Controllers\Admin\LogisticsController::class, 'restore'])->name('admin.logistics.restore');
@@ -204,6 +224,22 @@ Route::middleware(['auth', 'verified', 'security_policy', 'kyc_completed'])->gro
     Route::post('users/{id}/unlock', [UserController::class, 'unlock'])->name('admin.users.unlock');
     Route::resource('users', UserController::class)->names('admin.users')->middleware('permission:manage users');
     Route::resource('roles', RoleController::class)->names('admin.roles')->middleware('permission:manage roles');
+    
+    // Legal Documents Management
+    Route::middleware('permission:view legal documents|manage legal documents')->group(function () {
+        Route::get('legal-documents', [\App\Http\Controllers\Admin\LegalDocumentController::class, 'index'])->name('admin.legal-documents.index');
+    });
+
+    Route::middleware('permission:manage legal documents')->group(function () {
+        Route::resource('legal-documents', \App\Http\Controllers\Admin\LegalDocumentController::class)->names('admin.legal-documents')->except(['index', 'show']);
+        Route::post('legal-documents/{legal_document}/versions', [\App\Http\Controllers\Admin\LegalDocumentController::class, 'storeVersion'])->name('admin.legal-documents.versions.store');
+        Route::post('legal-documents/{legal_document}/versions/{version}/activate', [\App\Http\Controllers\Admin\LegalDocumentController::class, 'activateVersion'])->name('admin.legal-documents.versions.activate');
+        Route::delete('legal-documents/{legal_document}/versions/{version}', [\App\Http\Controllers\Admin\LegalDocumentController::class, 'destroyVersion'])->name('admin.legal-documents.versions.destroy');
+    });
+
+    Route::middleware('permission:view legal documents|manage legal documents')->group(function () {
+        Route::get('legal-documents/{legal_document}', [\App\Http\Controllers\Admin\LegalDocumentController::class, 'show'])->name('admin.legal-documents.show');
+    });
     
     // Settings (Super Admin Only)
     Route::middleware(['role:super-admin'])->group(function () {

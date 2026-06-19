@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Product extends Model
 {
     protected $fillable = [
-        'exporter_profile_id',
+        'seller_profile_id',
         'category_id',
         'name',
         'description',
@@ -35,9 +35,9 @@ class Product extends Model
         'readiness_score' => 'integer',
     ];
 
-    public function exporterProfile(): BelongsTo
+    public function sellerProfile(): BelongsTo
     {
-        return $this->belongsTo(ExporterProfile::class);
+        return $this->belongsTo(SellerProfile::class);
     }
 
     public function category(): BelongsTo

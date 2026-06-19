@@ -10,27 +10,14 @@ class BuyerProfile extends Model
 {
     protected $fillable = [
         'user_id',
-        'company_name',
-        'registration_number',
-        'tax_number',
-        'bvn',
-        'nin',
-        'address',
-        'buyer_type',
+        'phone_number',
+        'gender',
+        'shipping_address',
+        'billing_address',
+        'city',
+        'state',
+        'zip_code',
         'country',
-        'verification_status',
-        'readiness_score',
-        'approved_at',
-        'bank_name',
-        'account_number',
-        'account_name',
-        'trade_capacity',
-        'rejection_reason',
-        'regulatory_reviews',
-    ];
-
-    protected $casts = [
-        'regulatory_reviews' => 'array',
     ];
 
     public function user(): BelongsTo

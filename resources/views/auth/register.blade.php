@@ -232,6 +232,69 @@
     text-decoration: underline;
   }
 
+  .password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .password-toggle-btn {
+    position: absolute;
+    right: 1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .password-toggle-btn:hover {
+    color: #334155;
+  }
+  .form-input.has-icon {
+    padding-right: 3rem;
+  }
+
+  .password-policy {
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+  .password-policy p {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.25rem;
+  }
+  .password-policy ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .password-policy li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.25rem;
+    transition: color 0.2s;
+    font-size: 0.875rem;
+    color: #64748b;
+  }
+  .password-policy li svg {
+    width: 14px;
+    height: 14px;
+    margin-right: 0.5rem;
+    transition: color 0.2s;
+  }
+  .password-policy li.met {
+    color: #10b981;
+  }
+  .password-policy li.met svg {
+    color: #10b981;
+  }
+
   @media (max-width: 640px) {
     .register-card {
       padding: 2rem 1.5rem;
@@ -260,42 +323,13 @@
       @csrf
 
       <div class="form-group">
-        <label for="name" class="form-label">Name / Business Name</label>
-        <input id="name" type="text" name="name" value="{{ old('name') }}" class="form-input" required autofocus placeholder="e.g. Ganye Agro Cooperative">
+        <label for="name" class="form-label">Your Name </label>
+        <input id="name" type="text" name="name" value="{{ old('name') }}" class="form-input" required autofocus placeholder="First and last name">
         @error('name')
           <p class="input-error">{{ $message }}</p>
         @enderror
       </div>
 
-      <div class="form-group">
-        <label class="form-label">I am joining as an:</label>
-        <div class="account-type-grid">
-          <label class="account-type-card">
-            <input type="radio" name="account_type" value="exporter" {{ old('account_type') == 'exporter' ? 'checked' : '' }} required>
-            <div class="account-type-content">
-              <i data-lucide="package-export"></i>
-              <span>Exporter</span>
-            </div>
-          </label>
-          <label class="account-type-card">
-            <input type="radio" name="account_type" value="buyer" {{ old('account_type') == 'buyer' ? 'checked' : '' }} required>
-            <div class="account-type-content">
-              <i data-lucide="shopping-cart"></i>
-              <span>Buyer</span>
-            </div>
-          </label>
-          <label class="account-type-card">
-            <input type="radio" name="account_type" value="logistics" {{ old('account_type') == 'logistics' ? 'checked' : '' }} required>
-            <div class="account-type-content">
-              <i data-lucide="truck"></i>
-              <span>Logistics</span>
-            </div>
-          </label>
-        </div>
-        @error('account_type')
-          <p class="input-error">{{ $message }}</p>
-        @enderror
-      </div>
 
       <div class="form-group">
         <label for="email" class="form-label">Email Address</label>
@@ -307,7 +341,32 @@
 
       <div class="form-group">
         <label for="password" class="form-label">Password</label>
-        <input id="password" type="password" name="password" class="form-input" required placeholder="••••••••">
+        <div class="password-input-wrapper">
+          <input id="password" type="password" name="password" class="form-input has-icon" required placeholder="••••••••">
+          <button type="button" class="password-toggle-btn" id="toggle-password">
+            <i data-lucide="eye" id="eye-icon"></i>
+          </button>
+        </div>
+        
+        <div id="password-policy" class="password-policy">
+          <p>Password requirements:</p>
+          <ul>
+            <li id="req-length"><i data-lucide="circle"></i> At least {{ $passwordSettings['password_min_length'] ?? 8 }} characters</li>
+            @if($passwordSettings['password_require_uppercase'] ?? false)
+              <li id="req-uppercase"><i data-lucide="circle"></i> At least 1 uppercase letter</li>
+            @endif
+            @if($passwordSettings['password_require_lowercase'] ?? false)
+              <li id="req-lowercase"><i data-lucide="circle"></i> At least 1 lowercase letter</li>
+            @endif
+            @if($passwordSettings['password_require_number'] ?? false)
+              <li id="req-number"><i data-lucide="circle"></i> At least 1 number</li>
+            @endif
+            @if($passwordSettings['password_require_special'] ?? false)
+              <li id="req-special"><i data-lucide="circle"></i> At least 1 special character</li>
+            @endif
+          </ul>
+        </div>
+
         @error('password')
           <p class="input-error">{{ $message }}</p>
         @enderror
@@ -315,8 +374,22 @@
 
       <div class="form-group">
         <label for="password_confirmation" class="form-label">Confirm Password</label>
-        <input id="password_confirmation" type="password" name="password_confirmation" class="form-input" required placeholder="••••••••">
+        <div class="password-input-wrapper">
+          <input id="password_confirmation" type="password" name="password_confirmation" class="form-input has-icon" required placeholder="••••••••">
+          <button type="button" class="password-toggle-btn" id="toggle-password-confirm">
+            <i data-lucide="eye" id="eye-icon-confirm"></i>
+          </button>
+        </div>
       </div>
+
+      @if(isset($legalDocuments) && $legalDocuments->count() > 0)
+        <div style="font-size: 0.8125rem; color: #64748b; margin-top: 1rem; margin-bottom: 1.5rem; text-align: center; line-height: 1.5;">
+          By creating an account, you agree to our 
+          @foreach($legalDocuments as $index => $doc)
+            <a href="javascript:void(0)" style="color: #10b981; font-weight: 600; text-decoration: none;">{{ $doc->title }}</a>@if(!$loop->last)@if($loop->remaining == 1) and @else, @endif @endif
+          @endforeach.
+        </div>
+      @endif
 
       <button type="submit" class="btn-submit">Create Account</button>
 
@@ -326,4 +399,68 @@
     </form>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const pwdInput = document.getElementById('password');
+    if (!pwdInput) return;
+
+    const minLength = {{ $passwordSettings['password_min_length'] ?? 8 }};
+    
+    pwdInput.addEventListener('input', function() {
+      const val = pwdInput.value;
+
+      const reqLength = document.getElementById('req-length');
+      if (reqLength) {
+        if (val.length >= minLength) reqLength.classList.add('met');
+        else reqLength.classList.remove('met');
+      }
+
+      const reqUpper = document.getElementById('req-uppercase');
+      if (reqUpper) {
+        if (/[A-Z]/.test(val)) reqUpper.classList.add('met');
+        else reqUpper.classList.remove('met');
+      }
+
+      const reqLower = document.getElementById('req-lowercase');
+      if (reqLower) {
+        if (/[a-z]/.test(val)) reqLower.classList.add('met');
+        else reqLower.classList.remove('met');
+      }
+
+      const reqNum = document.getElementById('req-number');
+      if (reqNum) {
+        if (/[0-9]/.test(val)) reqNum.classList.add('met');
+        else reqNum.classList.remove('met');
+      }
+
+      const reqSpecial = document.getElementById('req-special');
+      if (reqSpecial) {
+        if (/[^A-Za-z0-9]/.test(val)) reqSpecial.classList.add('met');
+        else reqSpecial.classList.remove('met');
+      }
+    });
+
+    function setupPasswordToggle(inputId, btnId, iconId) {
+      const input = document.getElementById(inputId);
+      const btn = document.getElementById(btnId);
+      const icon = document.getElementById(iconId);
+      if (!input || !btn || !icon) return;
+
+      btn.addEventListener('click', function() {
+        if (input.type === 'password') {
+          input.type = 'text';
+          icon.setAttribute('data-lucide', 'eye-off');
+        } else {
+          input.type = 'password';
+          icon.setAttribute('data-lucide', 'eye');
+        }
+        lucide.createIcons();
+      });
+    }
+
+    setupPasswordToggle('password', 'toggle-password', 'eye-icon');
+    setupPasswordToggle('password_confirmation', 'toggle-password-confirm', 'eye-icon-confirm');
+  });
+</script>
 @endsection

@@ -12,7 +12,7 @@ class AuditController extends Controller
     public function index()
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 

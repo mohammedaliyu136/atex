@@ -25,9 +25,9 @@ class UserController extends Controller
             $query->onlyTrashed();
         }
 
-        // Exclude Super Admin, Exporters, Buyers, and Logistics from the general users list
+        // Exclude Super Admin, Sellers, Buyers, and Logistics from the general users list
         $query->whereDoesntHave('roles', function ($q) {
-            $q->whereIn('name', ['super-admin', 'exporter', 'buyer', 'logistics']);
+            $q->whereIn('name', ['super-admin', 'seller', 'buyer', 'logistics']);
         });
 
         // Search
@@ -61,13 +61,13 @@ class UserController extends Controller
 
         // Stats
         $stats = [
-            'total' => User::whereDoesntHave('roles', fn($q) => $q->whereIn('name', ['super-admin', 'exporter', 'buyer', 'logistics']))->count(),
-            'active' => User::where('is_active', true)->whereDoesntHave('roles', fn($q) => $q->whereIn('name', ['super-admin', 'exporter', 'buyer', 'logistics']))->count(),
-            'suspended' => User::where('is_active', false)->whereDoesntHave('roles', fn($q) => $q->whereIn('name', ['super-admin', 'exporter', 'buyer', 'logistics']))->count(),
-            'trashed' => User::onlyTrashed()->whereDoesntHave('roles', fn($q) => $q->whereIn('name', ['super-admin', 'exporter', 'buyer', 'logistics']))->count(),
+            'total' => User::whereDoesntHave('roles', fn($q) => $q->whereIn('name', ['super-admin', 'seller', 'buyer', 'logistics']))->count(),
+            'active' => User::where('is_active', true)->whereDoesntHave('roles', fn($q) => $q->whereIn('name', ['super-admin', 'seller', 'buyer', 'logistics']))->count(),
+            'suspended' => User::where('is_active', false)->whereDoesntHave('roles', fn($q) => $q->whereIn('name', ['super-admin', 'seller', 'buyer', 'logistics']))->count(),
+            'trashed' => User::onlyTrashed()->whereDoesntHave('roles', fn($q) => $q->whereIn('name', ['super-admin', 'seller', 'buyer', 'logistics']))->count(),
         ];
 
-        $roles = Role::whereNotIn('name', ['super-admin', 'exporter', 'buyer', 'logistics'])->get();
+        $roles = Role::whereNotIn('name', ['super-admin', 'seller', 'buyer', 'logistics'])->get();
 
         return view('admin.users.index', compact('users', 'stats', 'roles'));
     }
@@ -79,7 +79,7 @@ class UserController extends Controller
 
     public function create()
     {
-        $roles = Role::whereNotIn('name', ['super-admin', 'exporter', 'buyer', 'logistics'])->get();
+        $roles = Role::whereNotIn('name', ['super-admin', 'seller', 'buyer', 'logistics'])->get();
         return view('admin.users.create', compact('roles'));
     }
 
@@ -290,7 +290,7 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        $roles = Role::whereNotIn('name', ['super-admin', 'exporter', 'buyer', 'logistics'])->get();
+        $roles = Role::whereNotIn('name', ['super-admin', 'seller', 'buyer', 'logistics'])->get();
         return view('admin.users.edit', compact('user', 'roles'));
     }
 

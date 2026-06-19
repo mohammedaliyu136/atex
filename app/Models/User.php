@@ -110,6 +110,27 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Send the email verification notification.
+     *
+     * @return void
+     */
+    public function sendEmailVerificationNotification()
+    {
+        $verificationUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addHours(48),
+            ['id' => $this->id, 'hash' => sha1($this->getEmailForVerification())]
+        );
+
+        try {
+            \App\Models\Setting::configureMailer();
+            \Illuminate\Support\Facades\Mail::to($this)->send(new \App\Mail\ResendVerificationMail($this, $verificationUrl));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Verification Mail failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Send the password reset notification.
      *
      * @param  string  $token
@@ -128,9 +149,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasRole('super-admin');
     }
 
-    public function exporterProfile()
+    public function sellerProfile()
     {
-        return $this->hasOne(ExporterProfile::class);
+        return $this->hasOne(SellerProfile::class);
     }
 
     public function buyerProfile()
@@ -143,15 +164,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(LogisticsProfile::class);
     }
 
-    public function fieldOfficerProfile()
+    public function adminProfile()
     {
-        return $this->hasOne(FieldOfficerProfile::class);
+        return $this->hasOne(AdminProfile::class);
     }
 
     public function kycProfile()
     {
-        if ($this->hasRole('exporter')) {
-            return $this->exporterProfile();
+        if ($this->hasRole('seller')) {
+            return $this->sellerProfile();
         }
         if ($this->hasRole('buyer')) {
             return $this->buyerProfile();
@@ -159,9 +180,27 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($this->hasRole('logistics')) {
             return $this->logisticsProfile();
         }
-        if ($this->hasRole('field-officer')) {
-            return $this->fieldOfficerProfile();
+        if ($this->hasRole('admin')) {
+            return $this->adminProfile();
         }
         return null;
+    }
+
+    public function documentAcceptances()
+    {
+        return $this->hasMany(UserDocumentAcceptance::class);
+    }
+
+    public function hasAcceptedLatestLegalDocuments(): bool
+    {
+        $activeVersions = \App\Models\LegalDocumentVersion::active()->pluck('id');
+        
+        if ($activeVersions->isEmpty()) {
+            return true;
+        }
+
+        $acceptedVersions = $this->documentAcceptances()->pluck('legal_document_version_id');
+
+        return $activeVersions->diff($acceptedVersions)->isEmpty();
     }
 }

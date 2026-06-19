@@ -50,7 +50,7 @@
             Verified export trade operations for Adamawa State.
         </h1>
         <p class="text-white/80 text-lg max-w-2xl">
-            Manage exporters, products, RFQs, compliance documents, orders, payments, logistics, and audit trails from one role-aware system.
+            Manage sellers, products, RFQs, compliance documents, orders, payments, logistics, and audit trails from one role-aware system.
         </p>
     </section>
 
@@ -121,7 +121,7 @@
 
         <div class="flex flex-col gap-2 mt-6 p-4 bg-[#f8fbf8] rounded-lg border border-[#d7e3da]/50">
             <strong class="text-[#17201c] text-sm">Seeded demo accounts</strong>
-            <small class="text-[#65736b] text-xs">admin@example.com, officer@example.com, exporter@example.com, buyer@example.com, logistics@example.com</small>
+            <small class="text-[#65736b] text-xs">admin@example.com, officer@example.com, seller@example.com, buyer@example.com, logistics@example.com</small>
             <small class="text-[#65736b] text-xs">Password for all accounts: password</small>
         </div>
 

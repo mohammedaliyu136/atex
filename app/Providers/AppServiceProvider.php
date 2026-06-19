@@ -63,7 +63,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Polymorphic morph map for compliance documents
         \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
-            'exporter' => \App\Models\ExporterProfile::class,
+            'seller' => \App\Models\SellerProfile::class,
             'buyer' => \App\Models\BuyerProfile::class,
             'logistics' => \App\Models\LogisticsProfile::class,
             'product' => \App\Models\Product::class,

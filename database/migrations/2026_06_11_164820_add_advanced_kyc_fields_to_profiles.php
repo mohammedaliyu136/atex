@@ -11,14 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('exporter_profiles', function (Blueprint $table) {
-            $table->string('bank_name')->nullable();
-            $table->string('account_number')->nullable();
-            $table->string('account_name')->nullable();
-            $table->string('trade_capacity')->nullable();
-        });
-
-        Schema::table('buyer_profiles', function (Blueprint $table) {
+        Schema::table('seller_profiles', function (Blueprint $table) {
             $table->string('bank_name')->nullable();
             $table->string('account_number')->nullable();
             $table->string('account_name')->nullable();
@@ -38,11 +31,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('exporter_profiles', function (Blueprint $table) {
-            $table->dropColumn(['bank_name', 'account_number', 'account_name', 'trade_capacity']);
-        });
-
-        Schema::table('buyer_profiles', function (Blueprint $table) {
+        Schema::table('seller_profiles', function (Blueprint $table) {
             $table->dropColumn(['bank_name', 'account_number', 'account_name', 'trade_capacity']);
         });
 

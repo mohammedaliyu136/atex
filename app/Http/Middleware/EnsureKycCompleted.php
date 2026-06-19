@@ -2,10 +2,10 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\ExporterProfile;
+use App\Models\SellerProfile;
 use App\Models\BuyerProfile;
 use App\Models\LogisticsProfile;
-use App\Models\FieldOfficerProfile;
+use App\Models\AdminProfile;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,10 +26,10 @@ class EnsureKycCompleted
         }
 
         $roleProfileMap = [
-            'exporter' => [ExporterProfile::class, 'exporter'],
+            'seller' => [SellerProfile::class, 'seller'],
             'buyer' => [BuyerProfile::class, 'buyer'],
             'logistics' => [LogisticsProfile::class, 'logistics'],
-            'field-officer' => [FieldOfficerProfile::class, 'field-officer'],
+            'admin' => [AdminProfile::class, 'admin'],
         ];
 
         foreach ($roleProfileMap as $role => [$modelClass, $label]) {

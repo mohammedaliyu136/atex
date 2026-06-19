@@ -14,7 +14,7 @@ class LandingPageController extends Controller
         $user = Auth::user();
         
         $products = Product::where('status', 'approved')
-            ->with(['exporterProfile', 'category'])
+            ->with(['sellerProfile', 'category'])
             ->latest()
             ->get();
 
@@ -38,7 +38,7 @@ class LandingPageController extends Controller
                 'id' => (int) $product->id,
                 'name' => $product->name,
                 'category' => $product->category->name ?? '',
-                'exporter' => $product->exporterProfile->business_name ?? 'Verified Exporter',
+                'seller' => $product->sellerProfile->business_name ?? 'Verified Seller',
                 'origin' => ($product->origin_lga ?: 'Adamawa') . ', Adamawa',
                 'moq' => $product->moq,
                 'price' => $product->unit_price ?: 'Request quote',

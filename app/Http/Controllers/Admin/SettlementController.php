@@ -14,11 +14,11 @@ class SettlementController extends Controller
     public function index()
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 
-        $settlements = Settlement::with(['order', 'exporterProfile'])->latest()->get();
+        $settlements = Settlement::with(['order', 'sellerProfile'])->latest()->get();
 
         return view('admin.settlements.index', compact('settlements'));
     }
@@ -26,7 +26,7 @@ class SettlementController extends Controller
     public function credit(Request $request)
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('field-officer')) {
+        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
             abort(403);
         }
 
@@ -57,7 +57,7 @@ class SettlementController extends Controller
             'ip_address' => $request->ip(),
         ]);
 
-        return redirect()->route('admin.settlements.index')->with('success', 'Settlement payout released and exporter account credited.');
+        return redirect()->route('admin.settlements.index')->with('success', 'Settlement payout released and seller account credited.');
     }
 }
 

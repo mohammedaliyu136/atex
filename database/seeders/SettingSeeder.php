@@ -15,13 +15,13 @@ class SettingSeeder extends Seeder
         $settings = [
             // Email Settings
             ['key' => 'mail_mailer', 'value' => 'smtp', 'group' => 'email', 'type' => 'string'],
-            ['key' => 'mail_host', 'value' => 'journal.ang.org.ng', 'group' => 'email', 'type' => 'string'],
+            ['key' => 'mail_host', 'value' => 'mail.atex.adamawastate.gov.ng', 'group' => 'email', 'type' => 'string'],
             ['key' => 'mail_port', 'value' => '465', 'group' => 'email', 'type' => 'integer'],
-            ['key' => 'mail_username', 'value' => 'support@example.ng', 'group' => 'email', 'type' => 'string'],
-            ['key' => 'mail_password', 'value' => 'password', 'group' => 'email', 'type' => 'string'],
+            ['key' => 'mail_username', 'value' => 'contact@atex.adamawastate.gov.ng', 'group' => 'email', 'type' => 'string'],
+            ['key' => 'mail_password', 'value' => '5[(hkJFrG}%OvLe+', 'group' => 'email', 'type' => 'string'],
             ['key' => 'mail_encryption', 'value' => 'tls', 'group' => 'email', 'type' => 'string'],
-            ['key' => 'mail_from_address', 'value' => 'support@example.ng', 'group' => 'email', 'type' => 'string'],
-            ['key' => 'mail_from_name', 'value' => 'MY APP', 'group' => 'email', 'type' => 'string'],
+            ['key' => 'mail_from_address', 'value' => 'contact@atex.adamawastate.gov.ng', 'group' => 'email', 'type' => 'string'],
+            ['key' => 'mail_from_name', 'value' => 'ATEX - Adamawa State', 'group' => 'email', 'type' => 'string'],
             ['key' => 'email_wrapper_bg', 'value' => '#ffffff', 'group' => 'email', 'type' => 'string'],
             ['key' => 'email_body_bg', 'value' => '#ffffff', 'group' => 'email', 'type' => 'string'],
             ['key' => 'email_primary_color', 'value' => '#940000', 'group' => 'email', 'type' => 'string'],
@@ -32,8 +32,8 @@ class SettingSeeder extends Seeder
 
             // General Settings
             ['key' => 'platform_logo', 'value' => '', 'group' => 'general', 'type' => 'string'],
-            ['key' => 'platform_name', 'value' => 'URCS', 'group' => 'general', 'type' => 'string'],
-            ['key' => 'support_email', 'value' => 'support@urcs.gov.ng', 'group' => 'general', 'type' => 'string'],
+            ['key' => 'platform_name', 'value' => 'ATEX', 'group' => 'general', 'type' => 'string'],
+            ['key' => 'support_email', 'value' => 'contact@atex.adamawastate.gov.ng', 'group' => 'general', 'type' => 'string'],
             ['key' => 'contact_phone', 'value' => '08123456789', 'group' => 'general', 'type' => 'string'],
             ['key' => 'address', 'value' => '8 high court crescent', 'group' => 'general', 'type' => 'string'],
             ['key' => 'maintenance_mode', 'value' => '0', 'group' => 'general', 'type' => 'boolean'],

@@ -26,11 +26,14 @@
       </a>
 
       <nav class="main-nav" aria-label="Primary navigation">
-        <a href="{{ route('home') }}#exporter">Exporters</a>
+        &nbsp;
       </nav>
 
       <div class="top-actions">
         @auth
+          @if(!Auth::user()->hasRole('seller') && !Auth::user()->hasRole('admin') && !Auth::user()->hasRole('super-admin'))
+            <a class="btn ghost text-green-600 font-bold" href="{{ route('seller.onboarding') }}">Become a Seller</a>
+          @endif
           <a class="btn ghost" href="{{ route('admin.dashboard') }}">Dashboard</a>
         @else
           <a class="btn ghost" href="{{ route('register') }}">Register</a>

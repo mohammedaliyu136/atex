@@ -63,7 +63,7 @@ php artisan storage:link
 ```
 
 ### 4. Default Credentials
-*   **Super Admin**: `superadmin@urcs.com` / `superadmin`
+*   **Super Admin**: `superadmin@atex.com` / `superadmin`
 
 ---
 
