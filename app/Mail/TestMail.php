@@ -13,13 +13,15 @@ class TestMail extends Mailable
     use Queueable, SerializesModels;
 
     public $system_settings;
+    public $type;
 
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct($type = 'general')
     {
         $this->system_settings = \App\Models\Setting::getAllSettings();
+        $this->type = $type;
     }
 
     /**
@@ -27,8 +29,9 @@ class TestMail extends Mailable
      */
     public function envelope(): Envelope
     {
+        $prefix = $this->type === 'kyc' ? 'KYC SMTP Test' : 'System SMTP Test';
         return new Envelope(
-            subject: 'System SMTP Test - ' . ($this->system_settings['platform_name'] ?? 'URCS'),
+            subject: $prefix . ' - ' . ($this->system_settings['platform_name'] ?? 'ATEX'),
         );
     }
 

@@ -157,19 +157,6 @@ class KycController extends Controller
 
         $profile->update($updateData);
 
-        // Update user-level KYC status
-        $profileUser = $profile->user;
-        if ($profileUser) {
-            if ($status === 'approved') {
-                $profileUser->kyc_verification_status = 'approved';
-                $profileUser->kyc_approved_at = now();
-            } elseif ($status === 'rejected') {
-                $profileUser->kyc_verification_status = 'rejected';
-            } else {
-                $profileUser->kyc_verification_status = 'pending';
-            }
-            $profileUser->save();
-        }
 
         AtexAuditLog::create([
             'actor_id' => $user->id,

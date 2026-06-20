@@ -113,6 +113,193 @@
                         </div>
                     @endif
                 @endforeach
+            @elseif($group === 'email')
+                @php
+                    $generalSmtp = $settings->filter(fn($s) => str_starts_with($s->key, 'mail_') && !str_starts_with($s->key, 'mail_kyc_'));
+                    $kycSmtp = $settings->filter(fn($s) => str_starts_with($s->key, 'mail_kyc_'));
+                    $emailStyles = $settings->filter(fn($s) => str_starts_with($s->key, 'email_'));
+                @endphp
+
+                <!-- General SMTP Settings Card -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+                    <div class="px-8 py-5 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center mr-4">
+                                <i data-lucide="server" class="w-5 h-5 text-primary-600"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-slate-800">System SMTP Configuration</h2>
+                                <p class="text-xs text-slate-400">Configure your mail server settings for sending system emails.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-8">
+                        <form action="{{ route('admin.settings.update') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="group" value="email">
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                @foreach($generalSmtp as $setting)
+                                    <div class="flex flex-col space-y-2">
+                                        <label for="{{ $setting->key }}" class="text-sm font-semibold text-slate-700">
+                                            {{ ucwords(str_replace('_', ' ', $setting->key)) }}
+                                        </label>
+                                        
+                                        @if($setting->type === 'boolean')
+                                            <div class="flex items-center h-12">
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" name="{{ $setting->key }}" class="sr-only peer" {{ $setting->value == '1' ? 'checked' : '' }}>
+                                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                                                    <span class="ml-3 text-sm text-slate-500">Enabled</span>
+                                                </label>
+                                            </div>
+                                        @elseif($setting->type === 'integer')
+                                            <input type="number" id="{{ $setting->key }}" name="{{ $setting->key }}"
+                                                value="{{ $setting->value }}"
+                                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                        @else
+                                            <input type="{{ str_contains($setting->key, 'password') ? 'password' : 'text' }}" id="{{ $setting->key }}" name="{{ $setting->key }}"
+                                                value="{{ $setting->value }}"
+                                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <div class="mt-8 flex justify-end">
+                                <button type="submit"
+                                    class="px-6 py-2.5 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-all text-sm">
+                                    Save System SMTP Settings
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Test Config -->
+                    <div class="px-8 py-6 border-t border-slate-50 bg-slate-50/50">
+                        <div class="flex flex-col md:flex-row gap-4 items-end">
+                            <div class="flex-1 space-y-2">
+                                <label class="text-sm font-semibold text-slate-700">Test System Email</label>
+                                <input type="email" id="test_recipient_general" placeholder="Enter email to receive test" 
+                                       class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                            <button type="button" onclick="sendTestMail('general')" id="test_mail_btn_general"
+                                    class="px-8 py-3 bg-white text-slate-800 border border-slate-200 rounded-xl font-bold hover:bg-slate-100 transition-all flex items-center">
+                                <i data-lucide="mail" class="w-4 h-4 mr-2"></i>
+                                Send Test
+                            </button>
+                        </div>
+                        <div id="test_mail_result_general" class="mt-4 hidden p-4 rounded-xl text-sm"></div>
+                    </div>
+                </div>
+
+                <!-- KYC SMTP Settings Card -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+                    <div class="px-8 py-5 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center mr-4">
+                                <i data-lucide="shield-check" class="w-5 h-5 text-primary-600"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-slate-800">KYC SMTP Configuration</h2>
+                                <p class="text-xs text-slate-400">Configure separate credentials for KYC related emails.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-8">
+                        <form action="{{ route('admin.settings.update') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="group" value="email">
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                @foreach($kycSmtp as $setting)
+                                    <div class="flex flex-col space-y-2">
+                                        <label for="{{ $setting->key }}" class="text-sm font-semibold text-slate-700">
+                                            {{ ucwords(str_replace('_', ' ', $setting->key)) }}
+                                        </label>
+                                        <input type="{{ str_contains($setting->key, 'password') ? 'password' : 'text' }}" id="{{ $setting->key }}" name="{{ $setting->key }}"
+                                            value="{{ $setting->value }}"
+                                            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <div class="mt-8 flex justify-end">
+                                <button type="submit"
+                                    class="px-6 py-2.5 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-all text-sm">
+                                    Save KYC SMTP Settings
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Test Config -->
+                    <div class="px-8 py-6 border-t border-slate-50 bg-slate-50/50">
+                        <div class="flex flex-col md:flex-row gap-4 items-end">
+                            <div class="flex-1 space-y-2">
+                                <label class="text-sm font-semibold text-slate-700">Test KYC Email</label>
+                                <input type="email" id="test_recipient_kyc" placeholder="Enter email to receive test" 
+                                       class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                            <button type="button" onclick="sendTestMail('kyc')" id="test_mail_btn_kyc"
+                                    class="px-8 py-3 bg-white text-slate-800 border border-slate-200 rounded-xl font-bold hover:bg-slate-100 transition-all flex items-center">
+                                <i data-lucide="mail" class="w-4 h-4 mr-2"></i>
+                                Send Test
+                            </button>
+                        </div>
+                        <div id="test_mail_result_kyc" class="mt-4 hidden p-4 rounded-xl text-sm"></div>
+                    </div>
+                </div>
+
+                <!-- Email Styling Settings Card -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+                    <div class="px-8 py-5 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center mr-4">
+                                <i data-lucide="palette" class="w-5 h-5 text-primary-600"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-slate-800">Email Template Styling</h2>
+                                <p class="text-xs text-slate-400">Customize the colors and appearance of the email templates.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-8">
+                        <form action="{{ route('admin.settings.update') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="group" value="email">
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                @foreach($emailStyles as $setting)
+                                    <div class="flex flex-col space-y-2">
+                                        <label for="{{ $setting->key }}" class="text-sm font-semibold text-slate-700">
+                                            {{ ucwords(str_replace('_', ' ', $setting->key)) }}
+                                        </label>
+                                        <div class="flex items-center space-x-3">
+                                            <input type="color" id="{{ $setting->key }}" name="{{ $setting->key }}"
+                                                value="{{ $setting->value }}"
+                                                class="h-12 w-20 p-1 bg-white border border-slate-200 rounded-xl cursor-pointer">
+                                            <input type="text" value="{{ $setting->value }}"
+                                                class="w-32 px-4 py-3 rounded-xl border border-slate-200 text-sm font-mono text-slate-500 bg-slate-50"
+                                                readonly>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <div class="mt-8 flex justify-end">
+                                <button type="submit"
+                                    class="px-6 py-2.5 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-all text-sm">
+                                    Save Email Styling
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
             @else
                 <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
                     <h2 class="text-lg font-bold text-slate-800 mb-6 capitalize">{{ $group }} Settings</h2>
@@ -205,35 +392,6 @@
                         </div>
                     </form>
                 </div>
-
-                @if($group === 'email')
-                    <div class="mt-8 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                        <div class="px-8 py-5 border-b border-slate-50 bg-slate-50/50 flex items-center">
-                            <div class="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center mr-4">
-                                <i data-lucide="send" class="w-5 h-5 text-primary-600"></i>
-                            </div>
-                            <div>
-                                <h2 class="text-lg font-bold text-slate-800">Test Configuration</h2>
-                                <p class="text-xs text-slate-400">Verify your SMTP settings by sending a test email.</p>
-                            </div>
-                        </div>
-                        <div class="p-8">
-                            <div class="flex flex-col md:flex-row gap-4 items-end">
-                                <div class="flex-1 space-y-2">
-                                    <label class="text-sm font-semibold text-slate-700">Recipient Email</label>
-                                    <input type="email" id="test_recipient" placeholder="Enter email to receive test" 
-                                           class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
-                                </div>
-                                <button type="button" onclick="sendTestMail()" id="test_mail_btn"
-                                        class="px-8 py-3 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-all flex items-center">
-                                    <i data-lucide="mail" class="w-4 h-4 mr-2"></i>
-                                    Send Test
-                                </button>
-                            </div>
-                            <div id="test_mail_result" class="mt-4 hidden p-4 rounded-xl text-sm"></div>
-                        </div>
-                    </div>
-                @endif
             @endif
         </div>
     </div>
@@ -242,10 +400,10 @@
 
 @push('scripts')
 <script>
-function sendTestMail() {
-    const email = document.getElementById('test_recipient').value;
-    const btn = document.getElementById('test_mail_btn');
-    const result = document.getElementById('test_mail_result');
+function sendTestMail(type = 'general') {
+    const email = document.getElementById('test_recipient_' + type).value;
+    const btn = document.getElementById('test_mail_btn_' + type);
+    const result = document.getElementById('test_mail_result_' + type);
     
     if (!email) {
         alert('Please enter a recipient email address');
@@ -265,7 +423,7 @@ function sendTestMail() {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
-        body: JSON.stringify({ email: email })
+        body: JSON.stringify({ email: email, type: type })
     })
     .then(response => response.json())
     .then(data => {
@@ -273,7 +431,7 @@ function sendTestMail() {
         if (data.success) {
             result.className = 'mt-4 p-4 rounded-xl text-sm bg-emerald-50 text-emerald-700 border border-emerald-100';
             result.innerText = data.message;
-            document.getElementById('test_recipient').value = '';
+            document.getElementById('test_recipient_' + type).value = '';
         } else {
             result.className = 'mt-4 p-4 rounded-xl text-sm bg-red-50 text-red-700 border border-red-100';
             result.innerText = data.message;

@@ -12,17 +12,23 @@ class SellerOnboardingController extends Controller
     public function show()
     {
         $user = Auth::user();
-        if ($user->hasRole('seller')) {
-            $profile = SellerProfile::where('user_id', $user->id)->first();
-            if (!$profile || $profile->verification_status === 'pending') {
-                return redirect()->route('kyc.onboarding');
+
+        $profile = SellerProfile::where('user_id', $user->id)->first();
+
+        if ($profile) {
+            if ($profile->verification_status === 'pending') {
+                return view('seller.onboarding.pending');
             }
+
             if ($profile->seller_tier === 'local' && $profile->verification_status === 'approved') {
                 return redirect()->route('seller.onboarding.upgrade');
             }
+
             return redirect()->route('dashboard');
         }
-        return view('seller.onboarding.index');
+
+        $categories = \App\Models\BusinessCategory::where('status', true)->orderBy('name')->get();
+        return view('seller.onboarding.index', compact('categories'));
     }
 
     public function store(Request $request)
@@ -40,8 +46,7 @@ class SellerOnboardingController extends Controller
         ]);
 
         $user = Auth::user();
-        $user->assignRole('seller');
-
+        
         SellerProfile::updateOrCreate(
             ['user_id' => $user->id],
             [
@@ -63,27 +68,32 @@ class SellerOnboardingController extends Controller
             ]
         );
 
-        $user->kyc_verification_status = 'pending';
-        $user->kyc_submitted_at = now();
-        $user->save();
 
-        return redirect()->route('kyc.onboarding')->with('success', 'Your local seller registration has been submitted for review. You will be notified once approved.');
+        return redirect()->route('seller.onboarding')->with('success', 'Your local seller registration has been submitted for review. You will be notified once approved.');
     }
 
     public function showUpgrade()
     {
         $user = Auth::user();
+
         if (!$user->hasRole('seller')) {
             return redirect()->route('seller.onboarding');
         }
 
         $profile = SellerProfile::where('user_id', $user->id)->first();
-        if (!$profile || $profile->seller_tier === 'export') {
+        if (!$profile) {
+            return redirect()->route('dashboard');
+        }
+
+        if ($profile->seller_tier === 'export') {
+            if ($profile->verification_status === 'pending') {
+                return view('seller.onboarding.pending');
+            }
             return redirect()->route('dashboard');
         }
 
         if ($profile->verification_status !== 'approved') {
-            return redirect()->route('kyc.onboarding');
+            return view('seller.onboarding.pending');
         }
 
         return view('seller.onboarding.upgrade', compact('profile'));
@@ -136,11 +146,8 @@ class SellerOnboardingController extends Controller
         $this->uploadDocument($request, 'document_id', 'Valid Identification', $profile->id);
         $this->uploadDocument($request, 'document_address', 'Proof of Business Address', $profile->id);
 
-        $user->kyc_verification_status = 'pending';
-        $user->kyc_submitted_at = now();
-        $user->save();
 
-        return redirect()->route('kyc.onboarding')->with('success', 'Your export seller upgrade has been submitted for verification. We will notify you once approved.');
+        return redirect()->route('seller.onboarding.upgrade')->with('success', 'Your export seller upgrade has been submitted for verification. We will notify you once approved.');
     }
 
     private function uploadDocument($request, $fieldName, $title, $profileId): void

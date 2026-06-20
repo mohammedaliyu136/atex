@@ -35,7 +35,13 @@
           @if(!Auth::user()->hasRole('seller') && !Auth::user()->hasRole('admin') && !Auth::user()->hasRole('super-admin'))
             <a class="btn ghost text-green-600 font-bold" href="{{ route('seller.onboarding') }}">Become a Seller</a>
           @endif
-          <a class="btn ghost" href="{{ route('admin.dashboard') }}">Dashboard</a>
+          @php
+            $dashboardRoute = 'admin.dashboard';
+            if(Auth::user()->hasRole('seller')) $dashboardRoute = 'seller.dashboard';
+            elseif(Auth::user()->hasRole('buyer')) $dashboardRoute = 'buyer.dashboard';
+            elseif(Auth::user()->hasRole('logistics')) $dashboardRoute = 'logistics.dashboard';
+          @endphp
+          <a class="btn ghost" href="{{ route($dashboardRoute) }}">Dashboard</a>
         @else
           <a class="btn ghost" href="{{ route('register') }}">Register</a>
           <a class="btn ghost" href="{{ route('login') }}">Login</a>

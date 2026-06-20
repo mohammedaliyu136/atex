@@ -64,17 +64,14 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/api/world/states/{countryCode}', function (string $countryCode) {
-    return \Imujas9\World\Facades\State::where('country_code', strtoupper($countryCode))->get(['name', 'code']);
+    $states = \Imujas9\World\Facades\State::where('country_code', strtoupper($countryCode))->get(['name', 'code']);
+    return response()->json($states);
 })->name('api.world.states');
 
 Route::middleware(['auth', 'verified', 'security_policy', 'legal_acceptance'])->group(function () {
     Route::get('/kyc/onboarding', [\App\Http\Controllers\Auth\KycOnboardingController::class, 'show'])->name('kyc.onboarding');
     Route::post('/kyc/onboarding', [\App\Http\Controllers\Auth\KycOnboardingController::class, 'store'])->name('kyc.onboarding.store');
 
-    Route::get('/become-a-seller', [\App\Http\Controllers\SellerOnboardingController::class, 'show'])->name('seller.onboarding');
-    Route::post('/become-a-seller', [\App\Http\Controllers\SellerOnboardingController::class, 'store'])->name('seller.onboarding.store');
-    Route::get('/become-a-seller/upgrade', [\App\Http\Controllers\SellerOnboardingController::class, 'showUpgrade'])->name('seller.onboarding.upgrade');
-    Route::post('/become-a-seller/upgrade', [\App\Http\Controllers\SellerOnboardingController::class, 'storeUpgrade'])->name('seller.onboarding.upgrade.store');
 });
 
 Route::middleware(['auth', 'verified', 'security_policy', 'kyc_completed', 'legal_acceptance'])->group(function () {
@@ -94,6 +91,12 @@ Route::middleware(['auth', 'verified', 'security_policy', 'kyc_completed', 'lega
         Route::get('/profile/2fa', [\App\Http\Controllers\Buyer\ProfileController::class, 'showTwoFactor'])->name('buyer.profile.2fa');
         Route::post('/profile/2fa/confirm', [\App\Http\Controllers\Buyer\ProfileController::class, 'confirmTwoFactor'])->name('buyer.profile.2fa.confirm');
         Route::post('/profile/2fa/disable', [\App\Http\Controllers\Buyer\ProfileController::class, 'disableTwoFactor'])->name('buyer.profile.2fa.disable');
+
+        // Seller Onboarding for Buyers
+        Route::get('/become-a-seller', [\App\Http\Controllers\SellerOnboardingController::class, 'show'])->name('seller.onboarding');
+        Route::post('/become-a-seller', [\App\Http\Controllers\SellerOnboardingController::class, 'store'])->name('seller.onboarding.store');
+        Route::get('/become-a-seller/upgrade', [\App\Http\Controllers\SellerOnboardingController::class, 'showUpgrade'])->name('seller.onboarding.upgrade');
+        Route::post('/become-a-seller/upgrade', [\App\Http\Controllers\SellerOnboardingController::class, 'storeUpgrade'])->name('seller.onboarding.upgrade.store');
     });
 
     Route::prefix('logistics')->group(function () {
@@ -257,6 +260,27 @@ Route::middleware(['auth', 'verified', 'security_policy', 'kyc_completed', 'lega
         Route::delete('settings/logo', [\App\Http\Controllers\Admin\SettingController::class, 'deleteLogo'])->name('admin.settings.delete-logo');
         Route::post('settings/test-mail', [\App\Http\Controllers\Admin\SettingController::class, 'sendTestMail'])->name('admin.settings.test-mail');
     });
+
+    // System Options Management
+    Route::get('business-categories', [\App\Http\Controllers\Admin\BusinessCategoryController::class, 'index'])->name('admin.business-categories.index');
+    Route::post('business-categories', [\App\Http\Controllers\Admin\BusinessCategoryController::class, 'store'])->name('admin.business-categories.store');
+    Route::delete('business-categories/{id}', [\App\Http\Controllers\Admin\BusinessCategoryController::class, 'destroy'])->name('admin.business-categories.destroy');
+    Route::post('business-categories/{id}/toggle-status', [\App\Http\Controllers\Admin\BusinessCategoryController::class, 'toggleStatus'])->name('admin.business-categories.toggle-status');
+
+    Route::get('categories', [\App\Http\Controllers\Admin\CategoryController::class, 'index'])->name('admin.categories.index');
+    Route::post('categories', [\App\Http\Controllers\Admin\CategoryController::class, 'store'])->name('admin.categories.store');
+    Route::delete('categories/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'destroy'])->name('admin.categories.destroy');
+    Route::post('categories/{id}/toggle-status', [\App\Http\Controllers\Admin\CategoryController::class, 'toggleStatus'])->name('admin.categories.toggle-status');
+
+    Route::get('product-packaging', [\App\Http\Controllers\Admin\ProductPackagingController::class, 'index'])->name('admin.product-packaging.index');
+    Route::post('product-packaging', [\App\Http\Controllers\Admin\ProductPackagingController::class, 'store'])->name('admin.product-packaging.store');
+    Route::delete('product-packaging/{id}', [\App\Http\Controllers\Admin\ProductPackagingController::class, 'destroy'])->name('admin.product-packaging.destroy');
+    Route::post('product-packaging/{id}/toggle-status', [\App\Http\Controllers\Admin\ProductPackagingController::class, 'toggleStatus'])->name('admin.product-packaging.toggle-status');
+
+    Route::get('units', [\App\Http\Controllers\Admin\UnitOfMeasurementController::class, 'index'])->name('admin.units.index');
+    Route::post('units', [\App\Http\Controllers\Admin\UnitOfMeasurementController::class, 'store'])->name('admin.units.store');
+    Route::delete('units/{id}', [\App\Http\Controllers\Admin\UnitOfMeasurementController::class, 'destroy'])->name('admin.units.destroy');
+    Route::post('units/{id}/toggle-status', [\App\Http\Controllers\Admin\UnitOfMeasurementController::class, 'toggleStatus'])->name('admin.units.toggle-status');
     });
 });
 

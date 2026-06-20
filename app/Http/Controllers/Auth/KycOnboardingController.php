@@ -40,9 +40,6 @@ class KycOnboardingController extends Controller
                 )
             );
 
-            $user->kyc_verification_status = 'approved';
-            $user->kyc_approved_at = now();
-            $user->save();
 
             return redirect()->route('dashboard')->with('success', 'Profile completed successfully.');
         }
@@ -122,10 +119,6 @@ class KycOnboardingController extends Controller
                 $this->uploadDocument($request, 'git_insurance', 'Goods in Transit Insurance', $profileType, $profile->id);
             }
 
-            // Update user-level KYC status
-            $user->kyc_verification_status = 'pending';
-            $user->kyc_submitted_at = now();
-            $user->save();
 
             event(new KycSubmitted($user, $profileType, $profile));
         }

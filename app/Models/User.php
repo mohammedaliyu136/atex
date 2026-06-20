@@ -39,9 +39,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'bank_name',
         'account_number',
         'account_name',
-        'kyc_verification_status',
-        'kyc_submitted_at',
-        'kyc_approved_at',
     ];
 
     /**
@@ -70,8 +67,6 @@ class User extends Authenticatable implements MustVerifyEmail
             'require_password_change' => 'boolean',
             'is_active' => 'boolean',
             'locked_until' => 'datetime',
-            'kyc_submitted_at' => 'datetime',
-            'kyc_approved_at' => 'datetime',
         ];
     }
     /**

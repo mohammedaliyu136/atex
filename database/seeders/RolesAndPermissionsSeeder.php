@@ -47,6 +47,16 @@ class RolesAndPermissionsSeeder extends Seeder
                 'view legal documents',
                 'manage legal documents',
             ],
+            'System Options' => [
+                'view business category',
+                'manage business category',
+                'view product categories',
+                'manage product categories',
+                'view packaging',
+                'manage packaging',
+                'view units',
+                'manage units',
+            ],
         ];
 
         foreach ($permissionGroups as $group => $perms) {

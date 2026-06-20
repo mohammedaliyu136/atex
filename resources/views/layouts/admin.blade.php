@@ -192,10 +192,47 @@
                         <i data-lucide="scale" class="w-5 h-5 mr-3"></i>
                         Legal Documents
                     </a>
-                    <a href="{{ route('admin.settings.index') }}" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl {{ request()->routeIs('admin.settings.*') ? 'sidebar-active' : 'text-white/60 hover:bg-white/10 hover:text-white' }}">
-                        <i data-lucide="settings" class="w-5 h-5 mr-3"></i>
-                        System Settings
-                    </a>
+                    @if(auth()->user()->hasRole('super-admin'))
+                        <a href="{{ route('admin.settings.index') }}" class="flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-xl {{ request()->routeIs('admin.settings.*') ? 'sidebar-active' : 'text-white/60 hover:bg-white/10 hover:text-white' }}">
+                            <i data-lucide="settings" class="w-5 h-5 mr-3"></i>
+                            System Settings
+                        </a>
+                    @endif
+                    
+                    @if(auth()->user()->hasAnyPermission(['view business category', 'manage business category', 'view product categories', 'manage product categories', 'view packaging', 'manage packaging', 'view units', 'manage units']))
+                        <div x-data="{ open: {{ request()->routeIs('admin.business-categories.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.product-packaging.*') || request()->routeIs('admin.units.*') ? 'true' : 'false' }} }">
+                            <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
+                                <div class="flex items-center">
+                                    <i data-lucide="list" class="w-5 h-5 mr-3"></i>
+                                    System Options
+                                </div>
+                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" :class="{'rotate-180': open}"></i>
+                            </button>
+                            
+                            <div x-show="open" x-collapse class="pl-12 pr-4 py-2 space-y-1">
+                                @can('view business category')
+                                <a href="{{ route('admin.business-categories.index') }}" class="block px-3 py-2 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.business-categories.*') ? 'text-white bg-white/10 font-medium' : 'text-white/60 hover:text-white hover:bg-white/5' }}">
+                                    Business Categories
+                                </a>
+                                @endcan
+                                @can('view product categories')
+                                <a href="{{ route('admin.categories.index') }}" class="block px-3 py-2 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.categories.*') ? 'text-white bg-white/10 font-medium' : 'text-white/60 hover:text-white hover:bg-white/5' }}">
+                                    Product Categories
+                                </a>
+                                @endcan
+                                @can('view packaging')
+                                <a href="{{ route('admin.product-packaging.index') }}" class="block px-3 py-2 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.product-packaging.*') ? 'text-white bg-white/10 font-medium' : 'text-white/60 hover:text-white hover:bg-white/5' }}">
+                                    Product Packaging
+                                </a>
+                                @endcan
+                                @can('view units')
+                                <a href="{{ route('admin.units.index') }}" class="block px-3 py-2 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.units.*') ? 'text-white bg-white/10 font-medium' : 'text-white/60 hover:text-white hover:bg-white/5' }}">
+                                    Units of Measurement
+                                </a>
+                                @endcan
+                            </div>
+                        </div>
+                    @endif
                     @endhasanyrole
 
                     @hasrole('seller')

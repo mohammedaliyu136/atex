@@ -19,6 +19,9 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             SettingSeeder::class,
             AtexDemoSeeder::class,
+            BusinessCategorySeeder::class,
+            ProductPackagingSeeder::class,
+            UnitOfMeasurementSeeder::class,
         ]);
 
         $user = User::firstOrCreate(

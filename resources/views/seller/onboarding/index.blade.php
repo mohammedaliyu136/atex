@@ -1,19 +1,44 @@
 @extends('layouts.buyer')
 
 @section('content')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/css/intlTelInput.css">
+<style>.iti { width: 100%; }</style>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/intlTelInput.min.js"></script>
+
 <div class="max-w-3xl mx-auto" x-data="{
     country: '{{ old('country', 'Nigeria') }}',
     codes: @php
         $codes = \Imujas9\World\Facades\Country::all()->mapWithKeys(fn($c) => [$c->name => $c->code]);
     @endphp {{ $codes->toJson() }},
     states: [],
+    iti: null,
     async loadStates() {
         const code = this.codes[this.country];
         if (!code) { this.states = []; return; }
-        const r = await fetch('/api/world/states/' + code);
+        const r = await fetch('{{ url("api/world/states") }}/' + code);
         this.states = await r.json();
+    },
+    init() {
+        this.loadStates();
+        const input = document.querySelector('#phone_input');
+        if (input) {
+            this.iti = window.intlTelInput(input, {
+                initialCountry: 'ng',
+                utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/utils.js',
+                separateDialCode: true,
+            });
+            this.syncPhoneCode();
+        }
+    },
+    syncPhoneCode() {
+        if (this.iti) {
+            const code = this.codes[this.country];
+            if (code) {
+                this.iti.setCountry(code.toLowerCase());
+            }
+        }
     }
-}" x-init="loadStates()">
+}">
     <div class="mb-6">
         <h1 class="text-xl font-bold text-[#0f1111]">Become a Local Seller</h1>
         <p class="text-sm text-[#565959]">Register your business to sell on Adamawa Export Market. Start locally, upgrade to export anytime.</p>
@@ -68,13 +93,9 @@
                     <label class="block text-xs font-bold text-[#565959] mb-1.5">Business Category <span class="text-[#c45500]">*</span></label>
                     <select name="business_category" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
                         <option value="">Select category</option>
-                        <option value="Agriculture" {{ old('business_category') == 'Agriculture' ? 'selected' : '' }}>Agriculture</option>
-                        <option value="Food Processing" {{ old('business_category') == 'Food Processing' ? 'selected' : '' }}>Food Processing</option>
-                        <option value="Textiles" {{ old('business_category') == 'Textiles' ? 'selected' : '' }}>Textiles</option>
-                        <option value="Handicrafts" {{ old('business_category') == 'Handicrafts' ? 'selected' : '' }}>Handicrafts</option>
-                        <option value="Minerals" {{ old('business_category') == 'Minerals' ? 'selected' : '' }}>Minerals</option>
-                        <option value="Packaging" {{ old('business_category') == 'Packaging' ? 'selected' : '' }}>Packaging</option>
-                        <option value="Other" {{ old('business_category') == 'Other' ? 'selected' : '' }}>Other</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->name }}" {{ old('business_category') == $category->name ? 'selected' : '' }}>{{ $category->name }}</option>
+                        @endforeach
                     </select>
                 </div>
             </div>
@@ -98,9 +119,9 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-[#565959] mb-1.5">Country <span class="text-[#c45500]">*</span></label>
-                        <select name="country" x-model="country" @change="loadStates()" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
+                        <select name="country" x-model="country" @change="loadStates(); syncPhoneCode();" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
                             @foreach(\Imujas9\World\Facades\Country::all() as $c)
-                                <option value="{{ $c->name }}" {{ old('country', 'Nigeria') == $c->name ? 'selected' : '' }}>{{ $c->name }}</option>
+                                <option value="{{ $c->name }}" {{ old('country', 'Nigeria') == $c->name ? 'selected' : '' }}>{{ $c->flag }} {{ $c->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -142,8 +163,10 @@
             <div class="p-6 space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-[#565959] mb-1.5">Phone Number <span class="text-[#c45500]">*</span></label>
-                    <input type="text" name="phone" value="{{ old('phone') }}" required
-                           class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors" placeholder="+234 XXX XXX XXXX">
+                    <div wire:ignore>
+                        <input type="text" name="phone" id="phone_input" value="{{ old('phone') }}" required
+                               class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors" placeholder="Phone number">
+                    </div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-[#565959] mb-1.5">NIN <span class="text-[#c45500]">*</span></label>

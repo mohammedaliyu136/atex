@@ -67,12 +67,16 @@ class SettingController extends Controller
 
     public function sendTestMail(Request $request)
     {
-        $request->validate(['email' => 'required|email']);
+        $request->validate([
+            'email' => 'required|email',
+            'type' => 'nullable|string|in:general,kyc'
+        ]);
         
         try {
             Setting::configureMailer();
 
-            \Illuminate\Support\Facades\Mail::to($request->email)->send(new \App\Mail\TestMail());
+            $mailer = ($request->type === 'kyc') ? \Illuminate\Support\Facades\Mail::mailer('smtp_kyc') : \Illuminate\Support\Facades\Mail::mailer();
+            $mailer->to($request->email)->send(new \App\Mail\TestMail($request->type ?? 'general'));
             
             return response()->json(['success' => true, 'message' => 'Test email sent successfully!']);
         } catch (\Exception $e) {
