@@ -98,7 +98,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-[#565959] mb-1.5">Country <span class="text-[#c45500]">*</span></label>
-                        <select name="country" x-model="country" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
+                        <select name="country" x-model="country" @change="loadStates()" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
                             @foreach(\Imujas9\World\Facades\Country::all() as $c)
                                 <option value="{{ $c->name }}" {{ old('country', 'Nigeria') == $c->name ? 'selected' : '' }}>{{ $c->name }}</option>
                             @endforeach
