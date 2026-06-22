@@ -43,7 +43,16 @@ class KycController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
+
+        // Check if user has permission to view ANY kyc
+        $canViewAny = $user->hasPermissionTo('view seller kyc') || 
+                      $user->hasPermissionTo('view buyer kyc') || 
+                      $user->hasPermissionTo('view logistics kyc') || 
+                      $user->hasPermissionTo('manage seller kyc') || 
+                      $user->hasPermissionTo('manage buyer kyc') || 
+                      $user->hasPermissionTo('manage logistics kyc');
+
+        if (!$canViewAny) {
             abort(403);
         }
 
@@ -63,12 +72,26 @@ class KycController extends Controller
 
         $profiles = collect();
 
-        $profileTypes = [
-            'seller' => SellerProfile::class,
-            'buyer' => BuyerProfile::class,
-            'logistics' => LogisticsProfile::class,
-            'admin' => AdminProfile::class,
-        ];
+        $profileTypes = [];
+        if ($user->hasPermissionTo('view seller kyc') || $user->hasPermissionTo('manage seller kyc')) {
+            $profileTypes['seller'] = SellerProfile::class;
+        }
+        if ($user->hasPermissionTo('view buyer kyc') || $user->hasPermissionTo('manage buyer kyc')) {
+            $profileTypes['buyer'] = BuyerProfile::class;
+        }
+        if ($user->hasPermissionTo('view logistics kyc') || $user->hasPermissionTo('manage logistics kyc')) {
+            $profileTypes['logistics'] = LogisticsProfile::class;
+        }
+
+        if (!array_key_exists($filter, $profileTypes) && $filter !== 'all' && $filter !== 'export') {
+            $filter = array_key_first($profileTypes);
+        }
+        if ($filter === 'export' && !array_key_exists('seller', $profileTypes)) {
+            $filter = array_key_first($profileTypes);
+        }
+        if ($filter === 'all' && count($profileTypes) === 1) {
+            $filter = array_key_first($profileTypes);
+        }
 
         foreach ($profileTypes as $type => $class) {
             $records = $class::with('user')->get()->map(function ($profile) use ($type) {
@@ -150,9 +173,6 @@ class KycController extends Controller
     public function review(Request $request)
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
-            abort(403);
-        }
 
         $request->validate([
             'profile_type' => 'required|in:seller,buyer,logistics,admin',
@@ -162,6 +182,11 @@ class KycController extends Controller
         ]);
 
         $profileType = $request->profile_type;
+
+        if (!$user->hasPermissionTo("manage {$profileType} kyc")) {
+            abort(403);
+        }
+
         $profileId = $request->profile_id;
         $status = $request->status;
 
@@ -226,8 +251,10 @@ class KycController extends Controller
 
     public function show($type, $id)
     {
+        
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
+
+        if (!$user->hasPermissionTo("view {$type} kyc") && !$user->hasPermissionTo("manage {$type} kyc")) {
             abort(403);
         }
 
@@ -238,14 +265,20 @@ class KycController extends Controller
 
         $profile = $class::with('user')->findOrFail($id);
         $documents = Document::where('owner_type', $type)->where('owner_id', $profile->id)->get();
+        $fieldReviews = \App\Models\KycItemReview::where('owner_type', $type)->where('owner_id', $profile->id)->get()->keyBy('item_key');
 
-        return view('admin.kyc.show', compact('profile', 'type', 'documents'));
+        return view('admin.kyc.show', compact('profile', 'type', 'documents', 'fieldReviews'));
     }
+
 
     public function reviewDocument(Request $request, $id)
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
+
+        $document = Document::findOrFail($id);
+        $profileType = $document->owner_type;
+
+        if (!$user->hasPermissionTo("manage {$profileType} kyc")) {
             abort(403);
         }
 
@@ -254,7 +287,6 @@ class KycController extends Controller
             'comment' => 'nullable|string|max:1000',
         ]);
 
-        $document = Document::findOrFail($id);
         $document->update([
             'status' => $request->status,
             'reviewed_by' => $user->id,
@@ -321,9 +353,6 @@ class KycController extends Controller
     public function reviewRegulatory(Request $request)
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
-            abort(403);
-        }
 
         $request->validate([
             'profile_type' => 'required|in:seller,buyer,logistics,admin',
@@ -333,22 +362,40 @@ class KycController extends Controller
             'fields.*.comment' => 'nullable|string|max:1000',
         ]);
 
-        $class = $this->getProfileClass($request->profile_type);
+        $profileType = $request->profile_type;
+        $profileId = $request->profile_id;
+
+        if (!$user->hasPermissionTo("manage {$profileType} kyc")) {
+            abort(403);
+        }
+
+        $class = $this->getProfileClass($profileType);
         if (!$class) {
             abort(404);
         }
 
-        $profile = $class::findOrFail($request->profile_id);
+        $profile = $class::findOrFail($profileId);
 
-        $existing = $profile->regulatory_reviews ?? [];
         $incoming = $request->fields ?? [];
-        // Merge: only update fields that were submitted, keep existing for others
-        foreach ($incoming as $field => $review) {
-            $existing[$field] = $review;
+        
+        foreach ($incoming as $itemKey => $review) {
+            if (!empty($review['status'])) {
+                \App\Models\KycItemReview::updateOrCreate(
+                    [
+                        'owner_type' => $profileType,
+                        'owner_id' => $profileId,
+                        'item_key' => $itemKey,
+                    ],
+                    [
+                        'status' => $review['status'],
+                        'comment' => $review['status'] === 'rejected' ? ($review['comment'] ?? null) : null,
+                        'reviewer_id' => $user->id,
+                        'reviewed_at' => now(),
+                    ]
+                );
+            }
         }
-        $profile->regulatory_reviews = $existing;
-        $profile->save();
 
-        return redirect()->back()->with('success', 'Regulatory field reviews saved.');
+        return redirect()->back()->with('success', 'Field reviews saved successfully.');
     }
 }

@@ -57,6 +57,14 @@ class RolesAndPermissionsSeeder extends Seeder
                 'view units',
                 'manage units',
             ],
+            'KYC Management' => [
+                'view seller kyc',
+                'manage seller kyc',
+                'view buyer kyc',
+                'manage buyer kyc',
+                'view logistics kyc',
+                'manage logistics kyc',
+            ],
         ];
 
         foreach ($permissionGroups as $group => $perms) {

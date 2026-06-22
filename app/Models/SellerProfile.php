@@ -76,4 +76,9 @@ class SellerProfile extends Model
     {
         return $this->morphMany(Document::class, 'owner');
     }
+
+    public function kyc()
+    {
+        return $this->hasOne(SellerProfileKyc::class);
+    }
 }

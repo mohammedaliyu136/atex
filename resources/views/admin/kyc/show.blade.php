@@ -122,10 +122,11 @@
                 <input type="hidden" name="return_to" value="kyc">
                 
                 @if($profile->verification_status !== 'approved')
-                    <button type="submit" name="status" value="approved" class="w-full px-4 py-3 bg-emerald-600 text-white rounded-xl font-bold flex items-center justify-center hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-200">
+                    <button type="submit" name="status" value="approved" id="global-approve-btn" class="w-full px-4 py-3 bg-emerald-600 text-white rounded-xl font-bold flex items-center justify-center hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                         <i data-lucide="shield-check" class="w-5 h-5 mr-2"></i>
                         Approve KYC
                     </button>
+                    <p id="global-approve-warning" class="text-[10px] text-amber-600 text-center font-bold mt-1">You must approve all fields first.</p>
                 @endif
                 
                 @if($profile->verification_status !== 'pending')
@@ -151,6 +152,23 @@
 
     <!-- Right Column: Verification Data & Docs -->
     <div class="lg:col-span-2 space-y-6">
+        <form id="kyc-review-form" action="{{ route('admin.kyc.review-regulatory') }}" method="POST" class="space-y-6">
+            @csrf
+            <input type="hidden" name="profile_type" value="{{ $type }}">
+            <input type="hidden" name="profile_id" value="{{ $profile->id }}">
+            
+            @if($profile->verification_status !== 'approved')
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex justify-between items-center">
+                <div>
+                    <h4 class="font-bold text-slate-800">Field Reviews</h4>
+                    <p class="text-xs text-slate-500">Approve or reject individual items</p>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" id="approve-all-fields" class="px-4 py-2 border border-emerald-300 text-emerald-700 rounded-xl text-xs font-bold hover:bg-emerald-50 transition-colors">Approve All Fields</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm">Save Reviews</button>
+                </div>
+            </div>
+            @endif
 
         @if($type === 'buyer')
         <!-- Buyer Contact & Shipping Details -->
@@ -175,10 +193,7 @@
             @endphp
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach($buyerFields as $field => $info)
-                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">{{ $info['label'] }}</p>
-                        <p class="text-sm font-bold text-slate-800">{{ $info['value'] }}</p>
-                    </div>
+                    <x-kyc-field :field="$field" :label="$info['label']" :value="$info['value']" :reviews="$fieldReviews" :profile="$profile" />
                 @endforeach
             </div>
         </div>
@@ -212,18 +227,75 @@
             @endphp
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach($businessFields as $field => $info)
-                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">{{ $info['label'] }}</p>
-                        <p class="text-sm font-bold text-slate-800">{{ $info['value'] }}</p>
-                    </div>
+                    <x-kyc-field :field="$field" :label="$info['label']" :value="$info['value']" :reviews="$fieldReviews" :profile="$profile" />
                 @endforeach
             </div>
             @if($profile->business_description)
-                <div class="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Business Description</p>
-                    <p class="text-sm text-slate-700">{{ $profile->business_description }}</p>
+                <div class="mt-4">
+                    <x-kyc-field field="business_description" label="Business Description" :value="$profile->business_description" :reviews="$fieldReviews" :profile="$profile" />
                 </div>
             @endif
+        </div>
+        @endif
+
+        @if($type === 'seller' && $profile->kyc)
+        <!-- Personal Identity Information -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+            <div class="flex items-center mb-6">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mr-4">
+                    <i data-lucide="user" class="w-5 h-5 text-blue-600"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">Personal Identity Information</h3>
+            </div>
+            @php
+                $personalFields = [
+                    'full_name' => ['label' => 'Full Name', 'value' => $profile->kyc->full_name ?? 'Not provided'],
+                    'date_of_birth' => ['label' => 'Date of Birth', 'value' => $profile->kyc->date_of_birth ? \Carbon\Carbon::parse($profile->kyc->date_of_birth)->format('M d, Y') : 'Not provided'],
+                    'nationality' => ['label' => 'Nationality', 'value' => $profile->kyc->nationality ?? 'Not provided'],
+                    'id_type' => ['label' => 'ID Type', 'value' => $profile->kyc->id_type ? strtoupper(str_replace('_', ' ', $profile->kyc->id_type)) : 'Not provided'],
+                    'id_number' => ['label' => 'ID Number', 'value' => $profile->kyc->id_number ?? 'Not provided'],
+                ];
+            @endphp
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @foreach($personalFields as $field => $info)
+                    <x-kyc-field :field="$field" :label="$info['label']" :value="$info['value']" :reviews="$fieldReviews" :profile="$profile" />
+                @endforeach
+            </div>
+            @if($profile->kyc->residential_address)
+                <div class="mt-4">
+                    <x-kyc-field field="residential_address" label="Residential Address" :value="$profile->kyc->residential_address" :reviews="$fieldReviews" :profile="$profile" />
+                </div>
+            @endif
+
+            <div class="mt-6 pt-6 border-t border-slate-100">
+                <h4 class="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">KYC Document Uploads</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @php
+                        $kycDocs = [
+                            'ID Front' => $profile->kyc->id_front_path,
+                            'ID Back' => $profile->kyc->id_back_path,
+                            'Selfie' => $profile->kyc->selfie_path,
+                            'Proof of Address' => $profile->kyc->proof_of_address_path,
+                            'CAC Certificate' => $profile->kyc->cac_certificate_path,
+                        ];
+                    @endphp
+                    @foreach($kycDocs as $docName => $docPath)
+                        @if($docPath)
+                            <x-kyc-field :field="Str::slug($docName, '_')" :label="$docName" value="" :reviews="$fieldReviews" :profile="$profile">
+                                <a href="{{ asset('storage/' . $docPath) }}" target="_blank" class="flex items-center p-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors group bg-white">
+                                    <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center mr-3 text-indigo-600 group-hover:bg-indigo-200 shrink-0">
+                                        <i data-lucide="file-check-2" class="w-5 h-5"></i>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-bold text-slate-800 truncate">{{ $docName }}</p>
+                                        <p class="text-xs text-indigo-600 font-medium">View Document &rarr;</p>
+                                    </div>
+                                </a>
+                            </x-kyc-field>
+                        @endif
+                    @endforeach
+                </div>
+            </div>
         </div>
         @endif
 
@@ -237,22 +309,7 @@
                     </div>
                     <h3 class="text-lg font-bold text-slate-800">{{ $isLocalSeller ? 'Identity Verification' : 'Regulatory Information' }}</h3>
                 </div>
-                @if($profile->verification_status !== 'approved')
-                    <div class="flex items-center gap-2">
-                        <button type="button" id="approve-all-regulatory" class="px-4 py-2 border border-emerald-300 text-emerald-700 rounded-xl text-xs font-bold hover:bg-emerald-50 transition-colors">Approve All</button>
-                        <button type="submit" form="regulatory-form" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors">Save Reviews</button>
-                    </div>
-                @endif
-            </div>
-
-            <form id="regulatory-form" action="{{ route('admin.kyc.review-regulatory') }}" method="POST">
-                @csrf
-                <input type="hidden" name="profile_type" value="{{ $type }}">
-                <input type="hidden" name="profile_id" value="{{ $profile->id }}">
-
                 @php
-                    $reviews = $profile->regulatory_reviews ?? [];
-                    // Local sellers only provide NIN; full CAC/TIN/BVN compliance applies to exporters.
                     $regulatoryFields = $isLocalSeller
                         ? [
                             'nin' => ['label' => 'National Identity (NIN)', 'icon' => 'user-check', 'value' => $profile->nin ?? 'Not provided'],
@@ -267,34 +324,7 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     @foreach($regulatoryFields as $field => $info)
-                        @php
-                            $fieldReview = $reviews[$field] ?? null;
-                            $status = $fieldReview['status'] ?? null;
-                            $isApproved = $status === 'approved';
-                            $isRejected = $status === 'rejected';
-                        @endphp
-                        <div class="p-4 rounded-2xl {{ $isApproved ? 'bg-emerald-50/50 border border-emerald-200' : ($isRejected ? 'bg-red-50/50 border border-red-200' : 'bg-slate-50 border border-slate-100') }}">
-                            <div class="flex items-center justify-between mb-2">
-                                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center">
-                                    <i data-lucide="{{ $info['icon'] }}" class="w-3.5 h-3.5 mr-1.5 text-slate-400"></i>
-                                    {{ $info['label'] }}
-                                </p>
-                                @if($profile->verification_status !== 'approved')
-                                    <div class="flex rounded-lg border border-slate-200 overflow-hidden bg-white divide-x divide-slate-200">
-                                        <input type="radio" name="fields[{{ $field }}][status]" value="approved" class="hidden peer/ok" id="reg_{{ $field }}_ok" {{ $isApproved ? 'checked' : '' }}>
-                                        <label for="reg_{{ $field }}_ok" class="px-2.5 py-1 text-xs font-semibold cursor-pointer transition-colors peer-checked/ok:bg-emerald-600 peer-checked/ok:text-white text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 select-none">Approve</label>
-                                        <input type="radio" name="fields[{{ $field }}][status]" value="rejected" class="hidden peer/no" id="reg_{{ $field }}_no" {{ $isRejected ? 'checked' : '' }}>
-                                        <label for="reg_{{ $field }}_no" class="px-2.5 py-1 text-xs font-semibold cursor-pointer transition-colors peer-checked/no:bg-red-600 peer-checked/no:text-white text-slate-500 hover:text-red-700 hover:bg-red-50 select-none">Reject</label>
-                                    </div>
-                                @else
-                                    <span class="text-xs font-bold text-emerald-600">Approved</span>
-                                @endif
-                            </div>
-                            <p class="text-lg font-bold text-slate-800 {{ in_array($field, ['bvn','nin']) ? 'font-mono tracking-widest' : '' }}">{{ $info['value'] }}</p>
-                            @if($profile->verification_status !== 'approved')
-                                <textarea name="fields[{{ $field }}][comment]" rows="1" class="w-full mt-2 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs resize-none {{ $isRejected ? 'block' : ($fieldReview ? 'block' : 'hidden') }} comment-input" placeholder="Reason if rejected...">{{ $fieldReview['comment'] ?? '' }}</textarea>
-                            @endif
-                        </div>
+                        <x-kyc-field :field="$field" :label="$info['label']" :value="$info['value']" :reviews="$fieldReviews" :profile="$profile" :mono="in_array($field, ['bvn','nin'])" />
                     @endforeach
                 </div>
 
@@ -313,40 +343,14 @@
                     @endphp
                     <div class="space-y-3">
                         @foreach($bankFields as $field => $info)
-                            @php
-                                $fieldReview = $reviews[$field] ?? null;
-                                $status = $fieldReview['status'] ?? null;
-                                $isApproved = $status === 'approved';
-                                $isRejected = $status === 'rejected';
-                            @endphp
-                            <div class="p-3 rounded-xl {{ $isApproved ? 'bg-emerald-50/50 border border-emerald-200' : ($isRejected ? 'bg-red-50/50 border border-red-200' : 'bg-slate-50 border border-slate-100') }}">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-xs text-slate-500 font-medium mb-0.5">{{ $info['label'] }}</p>
-                                        <p class="text-sm font-bold text-slate-800 {{ !empty($info['mono']) ? 'font-mono' : '' }}">{{ $info['value'] }}</p>
-                                    </div>
-                                    @if($profile->verification_status !== 'approved')
-                                        <div class="flex rounded-lg border border-slate-200 overflow-hidden bg-white divide-x divide-slate-200 shrink-0">
-                                            <input type="radio" name="fields[{{ $field }}][status]" value="approved" class="hidden peer/ok" id="reg_{{ $field }}_ok" {{ $isApproved ? 'checked' : '' }}>
-                                            <label for="reg_{{ $field }}_ok" class="px-2 py-1 text-xs font-semibold cursor-pointer transition-colors peer-checked/ok:bg-emerald-600 peer-checked/ok:text-white text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 select-none">Approve</label>
-                                            <input type="radio" name="fields[{{ $field }}][status]" value="rejected" class="hidden peer/no" id="reg_{{ $field }}_no" {{ $isRejected ? 'checked' : '' }}>
-                                            <label for="reg_{{ $field }}_no" class="px-2 py-1 text-xs font-semibold cursor-pointer transition-colors peer-checked/no:bg-red-600 peer-checked/no:text-white text-slate-500 hover:text-red-700 hover:bg-red-50 select-none">Reject</label>
-                                        </div>
-                                    @else
-                                        <span class="text-xs font-bold text-emerald-600 shrink-0">Approved</span>
-                                    @endif
-                                </div>
-                                @if($profile->verification_status !== 'approved')
-<textarea name="fields[{{ $field }}][comment]" rows="1" class="w-full mt-2 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs resize-none {{ $isRejected ? 'block' : 'hidden' }} comment-input" placeholder="Reason if rejected...">{{ $fieldReview['comment'] ?? '' }}</textarea>
-                                @endif
-                            </div>
+                            <x-kyc-field :field="$field" :label="$info['label']" :value="$info['value']" :reviews="$fieldReviews" :profile="$profile" :mono="!empty($info['mono'])" />
                         @endforeach
                     </div>
                 </div>
                 @endunless
-            </form>
         </div>
         @endunless
+        </form>
 
         <!-- Uploaded Documents -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
@@ -443,6 +447,27 @@
 </div>
 @push('scripts')
 <script>
+function checkGlobalApprove() {
+    var globalBtn = document.getElementById('global-approve-btn');
+    var warning = document.getElementById('global-approve-warning');
+    if (!globalBtn) return;
+
+    var allRadios = document.querySelectorAll('.kyc-status-radio[value="approved"]');
+    var allChecked = true;
+
+    allRadios.forEach(function(radio) {
+        if (!radio.checked) allChecked = false;
+    });
+
+    if (allRadios.length > 0 && allChecked) {
+        globalBtn.disabled = false;
+        if(warning) warning.style.display = 'none';
+    } else {
+        globalBtn.disabled = true;
+        if(warning) warning.style.display = 'block';
+    }
+}
+
 document.querySelectorAll('input[type="radio"][name^="fields["]').forEach(function(radio) {
     radio.addEventListener('change', function() {
         var container = this.closest('.p-4, .p-3');
@@ -451,17 +476,22 @@ document.querySelectorAll('input[type="radio"][name^="fields["]').forEach(functi
             textarea.classList.toggle('hidden', this.value !== 'rejected');
             if (this.value === 'rejected') textarea.focus();
         }
+        checkGlobalApprove();
     });
 });
 
-document.getElementById('approve-all-regulatory')?.addEventListener('click', function() {
-    document.querySelectorAll('#regulatory-form input[type="radio"][value="approved"]').forEach(function(radio) {
+document.getElementById('approve-all-fields')?.addEventListener('click', function() {
+    document.querySelectorAll('#kyc-review-form input[type="radio"][value="approved"]').forEach(function(radio) {
         radio.checked = true;
         var container = radio.closest('.p-4, .p-3');
         var textarea = container ? container.querySelector('textarea.comment-input') : null;
         if (textarea) textarea.classList.add('hidden');
     });
+    checkGlobalApprove();
 });
+
+// Run on load
+checkGlobalApprove();
 </script>
 @endpush
 @endsection

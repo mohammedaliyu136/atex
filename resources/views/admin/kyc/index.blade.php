@@ -61,16 +61,6 @@
               <input type="hidden" name="profile_id" value="{{ $profile['id'] }}">
               
               <a href="{{ route('admin.kyc.show', ['type' => $profile['profile_type'], 'id' => $profile['id']]) }}" class="btn secondary" style="min-height: 32px; padding: 0 10px; font-size: 0.85rem; font-weight: normal; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center;">View Details</a>
-              
-              @if($profile['verification_status'] !== 'approved')
-                <button type="submit" name="status" value="approved" class="btn primary" style="min-height: 32px; padding: 0 10px; font-size: 0.85rem; font-weight: normal; border: 0; cursor: pointer;">Verify</button>
-              @endif
-              @if($profile['verification_status'] !== 'rejected')
-                <button type="submit" name="status" value="rejected" class="btn secondary" style="min-height: 32px; padding: 0 10px; font-size: 0.85rem; font-weight: normal; cursor: pointer;">Reject</button>
-              @endif
-              @if($profile['verification_status'] !== 'pending')
-                <button type="submit" name="status" value="pending" class="btn secondary" style="min-height: 32px; padding: 0 10px; font-size: 0.85rem; font-weight: normal; cursor: pointer;">Hold</button>
-              @endif
             </form>
           </td>
         </tr>
