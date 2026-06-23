@@ -11,8 +11,29 @@ class DummyProductSeeder extends Seeder
 {
     public function run()
     {
-        $seller = SellerProfile::first();
-        if (!$seller) return;
+        $user = \App\Models\User::firstOrCreate(
+            ['email' => 'demo.seller@atex.com'],
+            [
+                'name' => 'Demo Seller',
+                'password' => bcrypt('password'),
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ]
+        );
+
+        if (!$user->hasRole('seller')) {
+            $user->assignRole('seller');
+        }
+
+        $seller = SellerProfile::firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'business_name' => 'Adamawa Trade Co.',
+                'verification_status' => 'approved',
+                'seller_program_status' => 'active',
+                'lga' => 'Yola North',
+            ]
+        );
 
         $categories = Category::where('status', true)->get();
         if ($categories->isEmpty()) return;
