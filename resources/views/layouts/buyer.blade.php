@@ -115,11 +115,17 @@
                 <a href="{{ route('buyer.products.index') }}" class="whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded">All Products</a>
                 <a href="{{ route('buyer.dashboard') }}" class="whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded">My Dashboard</a>
                 <a href="{{ route('buyer.profile.show') }}" class="whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded">My Profile</a>
-                @hasrole('seller')
+                @php
+                    $hasSellerRole = auth()->check() && auth()->user()->hasRole('seller');
+                    $hasSellerProfile = auth()->check() && \App\Models\SellerProfile::where('user_id', auth()->id())->exists();
+                @endphp
+                @if($hasSellerRole)
                 <a href="{{ route('seller.dashboard') }}" class="whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded text-[#febd69]">My Store</a>
+                @elseif($hasSellerProfile)
+                <a href="{{ route('seller.onboarding') }}" class="whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded text-[#febd69]">Seller Application</a>
                 @else
                 <a href="{{ route('seller.onboarding') }}" class="whitespace-nowrap font-bold text-[#febd69] px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded">Sell on Adamawa Ecommerce platform</a>
-                @endhasrole
+                @endif
                 <div class="flex-1"></div>
                 <form action="{{ route('logout') }}" method="POST" class="inline">
                     @csrf
@@ -154,7 +160,13 @@
                         <div>
                             <h4 class="font-bold text-sm mb-3">Make Money with Us</h4>
                             <ul class="space-y-1.5 text-white/60">
+                                @if($hasSellerRole ?? false)
+                                <li><a href="{{ route('seller.dashboard') }}" class="hover:underline">My Store</a></li>
+                                @elseif($hasSellerProfile ?? false)
+                                <li><a href="{{ route('seller.onboarding') }}" class="hover:underline">Seller Application</a></li>
+                                @else
                                 <li><a href="{{ route('seller.onboarding') }}" class="hover:underline">Sell on ATEX</a></li>
+                                @endif
                                 <li><a href="#" class="hover:underline">Become a Logistics Partner</a></li>
                                 <li><a href="#" class="hover:underline">Advertise Your Products</a></li>
                             </ul>

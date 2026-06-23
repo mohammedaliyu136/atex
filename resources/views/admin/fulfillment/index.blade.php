@@ -86,7 +86,7 @@
         <tr>
           <td colspan="5" class="muted" style="padding: 20px; text-align: center;">No AfriBridge fulfillment orders found.</td>
         </tr>
-      @forelse
+      @endforelse
     </tbody>
   </table>
 </section>
