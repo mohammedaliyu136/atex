@@ -18,10 +18,11 @@ class SellerOnboardingController extends Controller
         $profile = SellerProfile::where('user_id', $user->id)->first();
 
         $rejectedFields = collect();
+        $documents = collect();
 
         if ($profile) {
             if ($profile->verification_status === 'pending') {
-                return view('seller.onboarding.pending');
+                return view('seller.onboarding.pending', compact('profile'));
             }
 
             if ($profile->seller_tier === 'local' && $profile->verification_status === 'approved') {
@@ -29,18 +30,23 @@ class SellerOnboardingController extends Controller
             }
 
             if ($profile->verification_status === 'rejected') {
-                $rejectedFields = \App\Models\KycItemReview::where('owner_type', 'seller')
+                $rejectedFields = \App\Models\SellerProfileKycItemReview::where('owner_type', 'seller')
                     ->where('owner_id', $profile->id)
                     ->where('status', 'rejected')
                     ->get()
                     ->keyBy('item_key');
+                
+                $documents = \App\Models\Document::where('owner_type', 'seller')
+                    ->where('owner_id', $profile->id)
+                    ->get()
+                    ->keyBy('document_type');
             } else {
                 return redirect()->route('dashboard');
             }
         }
 
         $categories = \App\Models\BusinessCategory::where('status', true)->orderBy('name')->get();
-        return view('seller.onboarding.index', compact('categories', 'profile', 'rejectedFields'));
+        return view('seller.onboarding.index', compact('categories', 'profile', 'rejectedFields', 'documents'));
     }
 
     public function store(Request $request)

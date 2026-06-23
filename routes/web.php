@@ -63,6 +63,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/legal-acceptance', [\App\Http\Controllers\LegalAcceptanceController::class, 'store'])->name('legal-acceptance.store');
 });
 
+Route::get('/products', [\App\Http\Controllers\Buyer\ProductController::class, 'index'])->name('buyer.products.index');
+Route::get('/products/{id}', [\App\Http\Controllers\Buyer\ProductController::class, 'show'])->name('buyer.products.show');
+
 Route::get('/api/world/states/{countryCode}', function (string $countryCode) {
     $states = \Imujas9\World\Facades\State::where('country_code', strtoupper($countryCode))->get(['name', 'code']);
     return response()->json($states);
@@ -94,8 +97,6 @@ Route::middleware(['auth', 'verified', 'security_policy', 'kyc_completed', 'lega
 
     Route::prefix('buyer')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'buyerDashboard'])->name('buyer.dashboard');
-        Route::get('/products', [\App\Http\Controllers\Buyer\ProductController::class, 'index'])->name('buyer.products.index');
-        Route::get('/products/{id}', [\App\Http\Controllers\Buyer\ProductController::class, 'show'])->name('buyer.products.show');
         
         // Profile Settings
         Route::get('/profile', [\App\Http\Controllers\Buyer\ProfileController::class, 'show'])->name('buyer.profile.show');

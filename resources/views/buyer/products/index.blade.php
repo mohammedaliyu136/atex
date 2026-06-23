@@ -28,7 +28,7 @@
         <select name="category" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-[#007185] outline-none">
             <option value="">All Categories</option>
             @foreach($categories as $cat)
-                <option value="{{ $cat->id }}" {{ request('category') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                <option value="{{ $cat->slug }}" {{ request('category') == $cat->slug ? 'selected' : '' }}>{{ $cat->name }}</option>
             @endforeach
         </select>
         <select name="sort" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-[#007185] outline-none">

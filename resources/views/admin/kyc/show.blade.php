@@ -148,6 +148,50 @@
                 @endif
             </form>
         </div>
+
+        @php
+            $allComments = collect();
+            foreach($fieldReviews as $r) {
+                if($r->comment) $allComments->push((object)[
+                    'field_name' => $r->item_key,
+                    'status' => $r->status,
+                    'comment' => $r->comment,
+                    'date' => $r->updated_at
+                ]);
+            }
+            if (isset($fieldReviewHistory)) {
+                foreach($fieldReviewHistory as $h) {
+                    if($h->comment) $allComments->push((object)[
+                        'field_name' => $h->item_key,
+                        'status' => $h->status,
+                        'comment' => $h->comment,
+                        'date' => \Carbon\Carbon::parse($h->changed_at)
+                    ]);
+                }
+            }
+            $allComments = $allComments->sortByDesc('date');
+        @endphp
+
+        @if($allComments->count() > 0)
+        <!-- Previous Reviews Context -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 mt-6">
+            <h3 class="text-sm font-bold text-slate-800 mb-4 uppercase tracking-wider border-b border-slate-100 pb-3 flex items-center">
+                <i data-lucide="history" class="w-4 h-4 mr-2 text-slate-500"></i> Feedback History
+            </h3>
+            <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                @foreach($allComments as $review)
+                    <div class="p-3 rounded-xl border {{ $review->status === 'rejected' ? 'border-red-100 bg-red-50/50' : 'border-emerald-100 bg-emerald-50/50' }}">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">{{ str_replace('_', ' ', $review->field_name) }}</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md {{ $review->status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' }}">{{ ucfirst($review->status) }}</span>
+                        </div>
+                        <p class="text-xs text-slate-600 mt-1 italic">"{{ $review->comment }}"</p>
+                        <p class="text-[9px] text-slate-400 mt-2 text-right">{{ $review->date->diffForHumans() }}</p>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
     </div>
 
     <!-- Right Column: Verification Data & Docs -->
@@ -352,6 +396,7 @@
         @endunless
         </form>
 
+        @if($documents->count() > 0 || $type !== 'seller')
         <!-- Uploaded Documents -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
             <div class="flex items-center justify-between mb-6">
@@ -443,6 +488,7 @@
                 </div>
             @endif
         </div>
+        @endif
     </div>
 </div>
 @push('scripts')

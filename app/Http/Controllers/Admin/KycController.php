@@ -265,9 +265,15 @@ class KycController extends Controller
 
         $profile = $class::with('user')->findOrFail($id);
         $documents = Document::where('owner_type', $type)->where('owner_id', $profile->id)->get();
-        $fieldReviews = \App\Models\KycItemReview::where('owner_type', $type)->where('owner_id', $profile->id)->get()->keyBy('item_key');
+        $fieldReviews = \App\Models\SellerProfileKycItemReview::where('owner_type', $type)->where('owner_id', $profile->id)->get()->keyBy('item_key');
+        $fieldReviewHistory = \Illuminate\Support\Facades\DB::table('seller_profile_kyc_item_reviews_hist')
+            ->where('owner_type', $type)
+            ->where('owner_id', $profile->id)
+            ->whereNotNull('comment')
+            ->orderBy('changed_at', 'desc')
+            ->get();
 
-        return view('admin.kyc.show', compact('profile', 'type', 'documents', 'fieldReviews'));
+        return view('admin.kyc.show', compact('profile', 'type', 'documents', 'fieldReviews', 'fieldReviewHistory'));
     }
 
 
@@ -380,7 +386,7 @@ class KycController extends Controller
         
         foreach ($incoming as $itemKey => $review) {
             if (!empty($review['status'])) {
-                \App\Models\KycItemReview::updateOrCreate(
+                \App\Models\SellerProfileKycItemReview::updateOrCreate(
                     [
                         'owner_type' => $profileType,
                         'owner_id' => $profileId,

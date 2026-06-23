@@ -5,41 +5,93 @@
 <style>.iti { width: 100%; }</style>
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/intlTelInput.min.js"></script>
 
-<div class="max-w-3xl mx-auto" x-data="{
-    step: 1,
-    country: '{{ old('country', 'Nigeria') }}',
-    codes: @php
-        $codes = \Imujas9\World\Facades\Country::all()->mapWithKeys(fn($c) => [$c->name => $c->code]);
-    @endphp {{ $codes->toJson() }},
-    states: [],
-    iti: null,
-    async loadStates() {
-        const code = this.codes[this.country];
-        if (!code) { this.states = []; return; }
-        const r = await fetch('{{ url("api/world/states") }}/' + code);
-        this.states = await r.json();
-    },
-    init() {
-        this.loadStates();
-        const input = document.querySelector('#phone_input');
-        if (input) {
-            this.iti = window.intlTelInput(input, {
-                initialCountry: 'ng',
-                utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/utils.js',
-                separateDialCode: true,
-            });
-            this.syncPhoneCode();
-        }
-    },
-    syncPhoneCode() {
-        if (this.iti) {
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('onboardingForm', () => ({
+        step: 1,
+        country: '{{ old('country', 'Nigeria') }}',
+        codes: @php
+            $codes = \Imujas9\World\Facades\Country::all()->mapWithKeys(fn($c) => [$c->name => $c->code]);
+        @endphp {!! $codes->toJson() !!},
+        states: [],
+        iti: null,
+        rejectedFields: {!! isset($rejectedFields) ? json_encode($rejectedFields->keys()->toArray()) : '[]' !!},
+        hasChanges: false,
+        
+        async loadStates() {
             const code = this.codes[this.country];
-            if (code) {
-                this.iti.setCountry(code.toLowerCase());
+            if (!code) { this.states = []; return; }
+            const r = await fetch('{{ url("api/world/states") }}/' + code);
+            this.states = await r.json();
+        },
+        
+        init() {
+            this.loadStates();
+            const input = document.querySelector('#phone_input');
+            if (input) {
+                this.iti = window.intlTelInput(input, {
+                    initialCountry: 'ng',
+                    utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/utils.js',
+                    separateDialCode: true,
+                });
+                this.syncPhoneCode();
+                input.addEventListener('countrychange', () => this.checkChanges());
             }
+            
+            // Store initial values for rejected fields
+            setTimeout(() => {
+                const form = document.getElementById('onboardingForm');
+                if (form) {
+                    this.rejectedFields.forEach(field => {
+                        let inputName = field === 'address' ? 'business_address' : field;
+                        const el = form.querySelector('[name=\'' + inputName + '\']');
+                        if (el && el.type !== 'file') {
+                            el.dataset.initial = el.value;
+                        }
+                    });
+                    this.checkChanges();
+                }
+            }, 100);
+        },
+        
+        syncPhoneCode() {
+            if (this.iti) {
+                const code = this.codes[this.country];
+                if (code) {
+                    this.iti.setCountry(code.toLowerCase());
+                }
+            }
+        },
+        
+        checkChanges() {
+            if (this.rejectedFields.length === 0) {
+                this.hasChanges = true;
+                return;
+            }
+            
+            let allChanged = true;
+            const form = document.getElementById('onboardingForm');
+            if (!form) return;
+            
+            this.rejectedFields.forEach(field => {
+                let inputName = field === 'address' ? 'business_address' : field;
+                const el = form.querySelector('[name=\'' + inputName + '\']');
+                if (el) {
+                    if (el.type === 'file') {
+                        if (el.files.length === 0) allChanged = false;
+                    } else {
+                        if (el.value === el.dataset.initial) allChanged = false;
+                    }
+                }
+            });
+            
+            this.hasChanges = allChanged;
         }
-    }
-}">
+    }));
+});
+</script>
+
+<div class="max-w-3xl mx-auto" x-data="onboardingForm()">
     <div class="mb-6">
         <h1 class="text-xl font-bold text-[#0f1111]">Become a Local Seller</h1>
         <p class="text-sm text-[#565959]">Register your business to sell on Adamawa Ecommerce platform. Start locally, upgrade to export anytime.</p>
@@ -77,7 +129,7 @@
         </div>
     @endif
 
-    <form action="{{ route('seller.onboarding.store') }}" method="POST" enctype="multipart/form-data">
+    <form id="onboardingForm" action="{{ route('seller.onboarding.store') }}" method="POST" enctype="multipart/form-data" @input="checkChanges" @change="checkChanges">
         @csrf
 
         <!-- Wizard Progress -->
@@ -124,41 +176,41 @@
                     <div>
                         <label class="block text-xs font-bold text-[#565959] mb-1.5">Business Name <span class="text-[#c45500]">*</span></label>
                         
-                        @if(isset($rejectedFields) && $rejectedFields->has('business_name'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['business_name']->comment }}</span></p>
-                        @endif
 <input type="text" name="business_name" value="{{ old('business_name', isset($profile) ? $profile->business_name ?? '' : '') }}" required
                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors" placeholder="Your business name">
+                        @if(isset($rejectedFields) && $rejectedFields->has('business_name'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['business_name']->comment }}</span></p>
+                        @endif
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-[#565959] mb-1.5">Brand Name</label>
                         
-                        @if(isset($rejectedFields) && $rejectedFields->has('seller_brand_name'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['seller_brand_name']->comment }}</span></p>
-                        @endif
 <input type="text" name="seller_brand_name" value="{{ old('seller_brand_name', isset($profile) ? $profile->seller_brand_name ?? '' : '') }}"
                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors" placeholder="Your brand name (if different from business name)">
+                        @if(isset($rejectedFields) && $rejectedFields->has('seller_brand_name'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['seller_brand_name']->comment }}</span></p>
+                        @endif
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-[#565959] mb-1.5">Business Description</label>
                         
-                        @if(isset($rejectedFields) && $rejectedFields->has('business_description'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['business_description']->comment }}</span></p>
-                        @endif
 <textarea name="business_description" rows="3" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors" placeholder="Tell us about your business...">{{ old('business_description', isset($profile) ? $profile->business_description ?? '' : '') }}</textarea>
+                        @if(isset($rejectedFields) && $rejectedFields->has('business_description'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['business_description']->comment }}</span></p>
+                        @endif
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-[#565959] mb-1.5">Business Category <span class="text-[#c45500]">*</span></label>
                         
-                        @if(isset($rejectedFields) && $rejectedFields->has('business_category'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['business_category']->comment }}</span></p>
-                        @endif
 <select name="business_category" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
                             <option value="">Select category</option>
                             @foreach($categories as $category)
                                 <option value="{{ $category->name }}" {{ old('business_category', isset($profile) ? $profile->business_category ?? '' : '') == $category->name ? 'selected' : '' }}>{{ $category->name }}</option>
                             @endforeach
                         </select>
+                        @if(isset($rejectedFields) && $rejectedFields->has('business_category'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['business_category']->comment }}</span></p>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -186,36 +238,36 @@
                     <div>
                         <label class="block text-xs font-bold text-[#565959] mb-1.5">Business Address <span class="text-[#c45500]">*</span></label>
                         
-                        @if(isset($rejectedFields) && $rejectedFields->has('business_address'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['business_address']->comment }}</span></p>
-                        @endif
 <textarea name="business_address" rows="2" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors" placeholder="Street address">{{ old('business_address', isset($profile) ? $profile->address ?? '' : '') }}</textarea>
+                        @if(isset($rejectedFields) && $rejectedFields->has('business_address'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['business_address']->comment }}</span></p>
+                        @endif
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-[#565959] mb-1.5">Country <span class="text-[#c45500]">*</span></label>
                             
-                        @if(isset($rejectedFields) && $rejectedFields->has('country'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['country']->comment }}</span></p>
-                        @endif
 <select name="country" x-model="country" @change="loadStates(); syncPhoneCode();" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
                                 @foreach(\Imujas9\World\Facades\Country::all() as $c)
                                     <option value="{{ $c->name }}" {{ old('country', 'Nigeria') == $c->name ? 'selected' : '' }}>{{ $c->flag }} {{ $c->name }}</option>
                                 @endforeach
                             </select>
+                        @if(isset($rejectedFields) && $rejectedFields->has('country'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['country']->comment }}</span></p>
+                        @endif
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-[#565959] mb-1.5">State <span class="text-[#c45500]">*</span></label>
                             
-                        @if(isset($rejectedFields) && $rejectedFields->has('state'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['state']->comment }}</span></p>
-                        @endif
 <select name="state" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
                                 <option value="">Select state</option>
                                 <template x-for="s in states" :key="s.code">
                                     <option :value="s.name" x-text="s.name" :selected="s.name === '{{ old('state', isset($profile) ? $profile->state ?? '' : '') }}'"></option>
                                 </template>
                             </select>
+                        @if(isset($rejectedFields) && $rejectedFields->has('state'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['state']->comment }}</span></p>
+                        @endif
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -227,11 +279,11 @@
                         <div>
                             <label class="block text-xs font-bold text-[#565959] mb-1.5">City</label>
                             
-                        @if(isset($rejectedFields) && $rejectedFields->has('city'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['city']->comment }}</span></p>
-                        @endif
 <input type="text" name="city" value="{{ old('city', isset($profile) ? $profile->city ?? '' : '') }}"
                                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors" placeholder="City">
+                        @if(isset($rejectedFields) && $rejectedFields->has('city'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['city']->comment }}</span></p>
+                        @endif
                         </div>
                     </div>
                 </div>
@@ -285,12 +337,12 @@
                         <div>
                             <label class="block text-xs font-bold text-[#565959] mb-1.5">Phone Number <span class="text-[#c45500]">*</span></label>
                             
-                        @if(isset($rejectedFields) && $rejectedFields->has('phone'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['phone']->comment }}</span></p>
-                        @endif
 <div wire:ignore>
                                 <input type="text" name="phone" id="phone_input" value="{{ old('phone', isset($profile) ? $profile->phone ?? '' : '') }}" required
                                        class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors" placeholder="+234 XXX XXX XXXX">
+                        @if(isset($rejectedFields) && $rejectedFields->has('phone'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['phone']->comment }}</span></p>
+                        @endif
                             </div>
                         </div>
                     </div>
@@ -330,34 +382,35 @@
                         <div>
                             <label class="block text-xs font-bold text-[#565959] mb-1.5">NIN (Optional) <span class="text-[#c45500]">*</span></label>
                             
-                        @if(isset($rejectedFields) && $rejectedFields->has('nin'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['nin']->comment }}</span></p>
-                        @endif
 <input type="text" name="nin" value="{{ old('nin', isset($profile) ? $profile->nin ?? '' : '') }}" required maxlength="11"
                                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors" placeholder="11-digit NIN">
+                        @if(isset($rejectedFields) && $rejectedFields->has('nin'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['nin']->comment }}</span></p>
+                        @endif
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-[#565959] mb-1.5">Document Type <span class="text-[#c45500]">*</span></label>
                             
-                        @if(isset($rejectedFields) && $rejectedFields->has('id_type'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['id_type']->comment }}</span></p>
-                        @endif
 <select name="id_type" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
+                                @php $selectedIdType = old('id_type', isset($profile) && $profile->kyc ? $profile->kyc->id_type : ''); @endphp
                                 <option value="">Select ID type</option>
-                                <option value="nin">National ID (NIN)</option>
-                                <option value="passport">International Passport</option>
-                                <option value="drivers">Driver's License</option>
-                                <option value="voter">Voter's Card</option>
+                                <option value="nin" {{ $selectedIdType === 'nin' ? 'selected' : '' }}>National ID (NIN)</option>
+                                <option value="passport" {{ $selectedIdType === 'passport' ? 'selected' : '' }}>International Passport</option>
+                                <option value="drivers" {{ $selectedIdType === 'drivers' ? 'selected' : '' }}>Driver's License</option>
+                                <option value="voter" {{ $selectedIdType === 'voter' ? 'selected' : '' }}>Voter's Card</option>
                             </select>
+                        @if(isset($rejectedFields) && $rejectedFields->has('id_type'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['id_type']->comment }}</span></p>
+                        @endif
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-[#565959] mb-1.5">ID Number <span class="text-[#c45500]">*</span></label>
                             
-                        @if(isset($rejectedFields) && $rejectedFields->has('id_number'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['id_number']->comment }}</span></p>
-                        @endif
 <input type="text" name="id_number" value="{{ old('id_number', isset($profile) ? $profile->kyc->id_number ?? '' : '') }}" required
                                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors" placeholder="Enter ID number">
+                        @if(isset($rejectedFields) && $rejectedFields->has('id_number'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['id_number']->comment }}</span></p>
+                        @endif
                         </div>
                     </div>
                     
@@ -370,46 +423,61 @@
                             <div>
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">Front Side of ID</label>
                                 
-                        @if(isset($rejectedFields) && $rejectedFields->has('id_front'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['id_front']->comment }}</span></p>
-                        @endif
 <input type="file" name="id_front" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#f0f2f2] file:text-[#0f1111] hover:file:bg-[#e3e6e6] transition-colors">
+                        @if(isset($rejectedFields) && $rejectedFields->has('id_front'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['id_front']->comment }}</span></p>
+                        @endif
+                        @if(isset($profile) && $profile->kyc && $profile->kyc->id_front_path)
+                            <a href="{{ asset('storage/' . $profile->kyc->id_front_path) }}" target="_blank" class="text-xs text-[#007185] hover:underline flex items-center gap-1 mt-1.5"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> View submitted document</a>
+                        @endif
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">Back Side of ID</label>
                                 
-                        @if(isset($rejectedFields) && $rejectedFields->has('id_back'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['id_back']->comment }}</span></p>
-                        @endif
 <input type="file" name="id_back" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#f0f2f2] file:text-[#0f1111] hover:file:bg-[#e3e6e6] transition-colors">
+                        @if(isset($rejectedFields) && $rejectedFields->has('id_back'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['id_back']->comment }}</span></p>
+                        @endif
+                        @if(isset($profile) && $profile->kyc && $profile->kyc->id_back_path)
+                            <a href="{{ asset('storage/' . $profile->kyc->id_back_path) }}" target="_blank" class="text-xs text-[#007185] hover:underline flex items-center gap-1 mt-1.5"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> View submitted document</a>
+                        @endif
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">Selfie</label>
                                 
-                        @if(isset($rejectedFields) && $rejectedFields->has('selfie'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['selfie']->comment }}</span></p>
-                        @endif
 <input type="file" name="selfie" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#f0f2f2] file:text-[#0f1111] hover:file:bg-[#e3e6e6] transition-colors">
+                        @if(isset($rejectedFields) && $rejectedFields->has('selfie'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['selfie']->comment }}</span></p>
+                        @endif
+                        @if(isset($profile) && $profile->kyc && $profile->kyc->selfie_path)
+                            <a href="{{ asset('storage/' . $profile->kyc->selfie_path) }}" target="_blank" class="text-xs text-[#007185] hover:underline flex items-center gap-1 mt-1.5"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> View submitted document</a>
+                        @endif
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">Proof of Address</label>
                                 
-                        @if(isset($rejectedFields) && $rejectedFields->has('proof_of_address'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['proof_of_address']->comment }}</span></p>
-                        @endif
 <input type="file" name="proof_of_address" accept="image/*,application/pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#f0f2f2] file:text-[#0f1111] hover:file:bg-[#e3e6e6] transition-colors">
+                        @if(isset($rejectedFields) && $rejectedFields->has('proof_of_address'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['proof_of_address']->comment }}</span></p>
+                        @endif
+                        @if(isset($profile) && $profile->kyc && $profile->kyc->proof_of_address_path)
+                            <a href="{{ asset('storage/' . $profile->kyc->proof_of_address_path) }}" target="_blank" class="text-xs text-[#007185] hover:underline flex items-center gap-1 mt-1.5"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> View submitted document</a>
+                        @endif
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             <div>
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">CAC Certificate</label>
                                 
-                        @if(isset($rejectedFields) && $rejectedFields->has('cac_certificate'))
-                            <p class="text-xs text-red-600 mb-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['cac_certificate']->comment }}</span></p>
-                        @endif
 <input type="file" name="cac_certificate" accept="image/*,application/pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#f0f2f2] file:text-[#0f1111] hover:file:bg-[#e3e6e6] transition-colors">
+                        @if(isset($rejectedFields) && $rejectedFields->has('cac_certificate'))
+                            <p class="text-xs text-red-600 mt-2 font-semibold flex items-start"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 shrink-0 mt-0.5"></i> <span>{{ $rejectedFields['cac_certificate']->comment }}</span></p>
+                        @endif
+                        @if(isset($profile) && $profile->kyc && $profile->kyc->cac_certificate_path)
+                            <a href="{{ asset('storage/' . $profile->kyc->cac_certificate_path) }}" target="_blank" class="text-xs text-[#007185] hover:underline flex items-center gap-1 mt-1.5"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> View submitted document</a>
+                        @endif
                             </div>
                         </div>
                     </div>
@@ -420,7 +488,8 @@
                 <button type="button" @click="step = 3" class="text-[#007185] font-semibold py-2 px-4 hover:underline">
                     &larr; Back
                 </button>
-                <button type="submit" class="amazon-btn text-base font-semibold py-2.5 px-8 rounded-lg shadow-sm">
+                <button type="submit" class="amazon-btn text-base font-semibold py-2.5 px-8 rounded-lg shadow-sm transition-all"
+                        :disabled="!hasChanges" :class="!hasChanges ? 'opacity-50 cursor-not-allowed grayscale' : ''">
                     Submit Registration
                 </button>
             </div>

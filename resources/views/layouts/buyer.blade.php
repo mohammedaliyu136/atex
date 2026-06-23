@@ -46,6 +46,13 @@
         .link-blue { color: #007185; }
         .link-blue:hover { color: #c7511f; text-decoration: underline; }
         .section-title { font-size: 1.25rem; font-weight: 700; color: #0f1111; }
+
+        /* Custom scrollbar for dark backgrounds */
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; }
     </style>
 
     <script>
@@ -89,10 +96,41 @@
 
                     <!-- Right Links -->
                     <div class="flex items-center gap-2 text-white/90">
-                        <a href="{{ route('buyer.profile.show') }}" class="flex flex-col leading-tight px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded text-xs">
-                            <span class="text-[11px] text-white/60">Hello, {{ Str::words(auth()->user()->name ?? 'Guest', 1, '') }}</span>
-                            <span class="text-sm font-bold">Account</span>
+                        @auth
+                        <!-- Account Dropdown -->
+                        <div class="relative" x-data="{ open: false }" @click.away="open = false">
+                            <button @click="open = !open" class="flex flex-col leading-tight px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded text-xs text-left">
+                                <span class="text-[11px] text-white/60">Hello, {{ Str::words(auth()->user()->name ?? 'Guest', 1, '') }}</span>
+                                <span class="text-sm font-bold flex items-center gap-1">Account <i data-lucide="chevron-down" class="w-3 h-3 text-white/60"></i></span>
+                            </button>
+
+                            <div x-show="open" 
+                                 x-transition:enter="transition ease-out duration-100" 
+                                 x-transition:enter-start="transform opacity-0 scale-95" 
+                                 x-transition:enter-end="transform opacity-100 scale-100" 
+                                 x-transition:leave="transition ease-in duration-75" 
+                                 x-transition:leave-start="transform opacity-100 scale-100" 
+                                 x-transition:leave-end="transform opacity-0 scale-95" 
+                                 class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50 py-1" 
+                                 style="display: none;" x-cloak>
+                                
+                                <a href="{{ route('buyer.dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">My Dashboard</a>
+                                <a href="{{ route('buyer.profile.show') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">My Profile</a>
+                                <form method="POST" action="{{ route('logout') }}" class="block">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">Logout</button>
+                                </form>
+                            </div>
+                        </div>
+                        @else
+                        <a href="{{ route('login') }}" class="flex flex-col leading-tight px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded text-xs">
+                            <span class="text-[11px] text-white/60">Hello, sign in</span>
+                            <span class="text-sm font-bold">Account & Lists</span>
                         </a>
+                        <a href="{{ route('register') }}" class="flex items-center gap-1 px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded">
+                            <span class="text-sm font-bold">Register</span>
+                        </a>
+                        @endauth
                         <a href="#" class="flex flex-col leading-tight px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded text-xs">
                             <span class="text-[11px] text-white/60">Returns</span>
                             <span class="text-sm font-bold">& Orders</span>
@@ -108,26 +146,53 @@
 
         <!-- Sub Nav -->
         <nav class="amazon-subnav text-white text-sm sticky top-[60px] z-40">
-            <div class="max-w-[1500px] mx-auto px-4 flex items-center h-[40px] gap-5 overflow-x-auto">
-                <a href="{{ route('buyer.products.index') }}" class="flex items-center gap-1.5 whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded">
-                    <i data-lucide="home" class="w-[18px] h-[18px]"></i>
-                </a>
-                <a href="{{ route('buyer.products.index') }}" class="whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded">All Products</a>
-                <a href="{{ route('buyer.dashboard') }}" class="whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded">My Dashboard</a>
-                <a href="{{ route('buyer.profile.show') }}" class="whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded">My Profile</a>
-                @hasrole('seller')
-                <a href="{{ route('seller.dashboard') }}" class="whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded text-[#febd69]">My Store</a>
-                @else
-                <a href="{{ route('seller.onboarding') }}" class="whitespace-nowrap font-bold text-[#febd69] px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded">Sell on Adamawa Ecommerce platform</a>
-                @endhasrole
-                <div class="flex-1"></div>
-                <form action="{{ route('logout') }}" method="POST" class="inline">
+            <div class="max-w-[1500px] mx-auto px-4 flex items-center h-[40px] gap-2 md:gap-5 pb-1 -mb-1">
+                <!-- Fixed Left Items -->
+                <div class="flex items-center gap-1 md:gap-3 shrink-0">
+                    <a href="{{ route('buyer.products.index') }}" class="flex items-center gap-1.5 whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded">
+                        <i data-lucide="home" class="w-[18px] h-[18px]"></i>
+                    </a>
+                    <a href="{{ route('buyer.products.index') }}" class="whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded hidden sm:block">All Products</a>
+                    
+                    @auth
+                        @hasrole('seller')
+                        <a href="{{ route('seller.dashboard') }}" class="whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded text-[#febd69]">My Store</a>
+                        @endhasrole
+                    @endauth
+                </div>
+                
+                <!-- Separator -->
+                <div class="h-4 w-px bg-white/30 shrink-0"></div>
+                
+                <!-- Scrollable Categories -->
+                @php
+                    $navCategories = \App\Models\Category::where('status', true)->whereNull('parent_id')->orderBy('name')->get();
+                @endphp
+                <div class="flex-1 min-w-0 overflow-x-auto custom-scrollbar flex items-center gap-2 md:gap-4 pr-2">
+                    @foreach($navCategories as $cat)
+                        <a href="{{ route('buyer.products.index', ['category' => $cat->slug]) }}" class="whitespace-nowrap hover:outline hover:outline-1 hover:outline-white/30 px-2 py-1 rounded">
+                            {{ $cat->name }}
+                        </a>
+                    @endforeach
+                </div>
+                
+                <!-- Fixed Right Items -->
+                @auth
+                <form action="{{ route('logout') }}" method="POST" class="inline shrink-0 pl-1 md:pl-2 border-l border-white/20">
                     @csrf
-                    <button type="submit" class="whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded flex items-center gap-1">
+                    <button type="submit" class="whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded flex items-center gap-1 text-white/80 hover:text-white">
                         <i data-lucide="log-out" class="w-4 h-4"></i>
-                        Logout
+                        <span class="hidden md:inline">Logout</span>
                     </button>
                 </form>
+                @else
+                <div class="inline shrink-0 pl-1 md:pl-2 border-l border-white/20">
+                    <a href="{{ route('login') }}" class="whitespace-nowrap font-medium px-2 py-1 hover:outline hover:outline-1 hover:outline-white/30 rounded flex items-center gap-1 text-white/80 hover:text-white">
+                        <i data-lucide="log-in" class="w-4 h-4"></i>
+                        <span class="hidden md:inline">Login</span>
+                    </a>
+                </div>
+                @endauth
             </div>
         </nav>
 

@@ -26,7 +26,9 @@ class ProductController extends Controller
         }
 
         if ($request->filled('category')) {
-            $query->where('category_id', $request->category);
+            $query->whereHas('category', function($q) use ($request) {
+                $q->where('slug', $request->category);
+            });
         }
 
         if ($request->filled('sort')) {
@@ -41,7 +43,7 @@ class ProductController extends Controller
         }
 
         $products = $query->paginate(12)->withQueryString();
-        $categories = Category::where('status', 'active')->get();
+        $categories = Category::where('status', true)->get();
 
         return view('buyer.products.index', compact('products', 'categories', 'user'));
     }
