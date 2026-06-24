@@ -16,6 +16,7 @@ class AtexDemoSeeder extends Seeder
         Role::findOrCreate('super-admin');
         Role::findOrCreate('admin');
         Role::findOrCreate('seller');
+        Role::findOrCreate('exporter');
         Role::findOrCreate('buyer');
         Role::findOrCreate('logistics');
     }

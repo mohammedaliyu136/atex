@@ -22,6 +22,7 @@ class KycController extends Controller
     {
         return match ($type) {
             'seller' => new SellerProfile,
+            'export' => new \App\Models\ExporterProfile,
             'buyer' => new BuyerProfile,
             'logistics' => new LogisticsProfile,
             'admin' => new AdminProfile,
@@ -33,6 +34,7 @@ class KycController extends Controller
     {
         return match ($type) {
             'seller' => SellerProfile::class,
+            'export' => \App\Models\ExporterProfile::class,
             'buyer' => BuyerProfile::class,
             'logistics' => LogisticsProfile::class,
             'admin' => AdminProfile::class,
@@ -76,6 +78,9 @@ class KycController extends Controller
         if ($user->hasPermissionTo('view seller kyc') || $user->hasPermissionTo('manage seller kyc')) {
             $profileTypes['seller'] = SellerProfile::class;
         }
+        if ($user->hasPermissionTo('view export kyc') || $user->hasPermissionTo('manage export kyc')) {
+            $profileTypes['export'] = \App\Models\ExporterProfile::class;
+        }
         if ($user->hasPermissionTo('view buyer kyc') || $user->hasPermissionTo('manage buyer kyc')) {
             $profileTypes['buyer'] = BuyerProfile::class;
         }
@@ -83,10 +88,7 @@ class KycController extends Controller
             $profileTypes['logistics'] = LogisticsProfile::class;
         }
 
-        if (!array_key_exists($filter, $profileTypes) && $filter !== 'all' && $filter !== 'export') {
-            $filter = array_key_first($profileTypes);
-        }
-        if ($filter === 'export' && !array_key_exists('seller', $profileTypes)) {
+        if (!array_key_exists($filter, $profileTypes) && $filter !== 'all') {
             $filter = array_key_first($profileTypes);
         }
         if ($filter === 'all' && count($profileTypes) === 1) {
@@ -94,11 +96,18 @@ class KycController extends Controller
         }
 
         foreach ($profileTypes as $type => $class) {
-            $records = $class::with('user')->get()->map(function ($profile) use ($type) {
+            $query = $class::query();
+            if ($type === 'export') {
+                $query->with('sellerProfile.user');
+            } else {
+                $query->with('user');
+            }
+            $records = $query->get()->map(function ($profile) use ($type) {
                 $sellerTier = $type === 'seller' ? ($profile->seller_tier ?? 'local') : null;
 
                 $org = match ($type) {
                     'seller' => $profile->business_name,
+                    'export' => $profile->sellerProfile->business_name ?? 'Exporter',
                     'buyer' => $profile->company_name ?: ($profile->user->name ?? 'Buyer Account'),
                     'logistics' => $profile->company_name,
                     'admin' => $profile->full_name ?: 'Admin',
@@ -107,6 +116,7 @@ class KycController extends Controller
 
                 $category = match ($type) {
                     'seller' => $profile->business_category ?: $profile->business_type,
+                    'export' => 'Exporter',
                     'buyer' => 'Buyer',
                     'logistics' => 'logistics',
                     'admin' => 'admin',
@@ -115,6 +125,7 @@ class KycController extends Controller
 
                 $location = match ($type) {
                     'seller' => $profile->state ?: $profile->lga,
+                    'export' => $profile->sellerProfile->state ?? ($profile->sellerProfile->lga ?? null),
                     'buyer' => $profile->country,
                     'logistics' => $profile->coverage_regions,
                     'admin' => $profile->address,
@@ -122,11 +133,29 @@ class KycController extends Controller
                 };
 
                 $labels = [
-                    'seller' => $sellerTier === 'export' ? 'Export Seller' : 'Local Seller',
+                    'seller' => 'Local Seller',
+                    'export' => 'Exporter',
                     'buyer' => 'Buyer',
                     'logistics' => 'Logistics',
                     'admin' => 'Admin',
                 ];
+
+                $bvn = match($type) {
+                    'export' => $profile->sellerProfile->bvn ?? 'N/A',
+                    default => $profile->bvn ?? 'N/A',
+                };
+
+                $nin = match($type) {
+                    'export' => $profile->sellerProfile->nin ?? 'N/A',
+                    default => $profile->nin ?? 'N/A',
+                };
+
+                $rc_number = match($type) {
+                    'export' => $profile->nepc_number ?? 'N/A',
+                    default => $profile->registration_number ?? 'N/A',
+                };
+
+                $userModel = $type === 'export' ? ($profile->sellerProfile->user ?? null) : ($profile->user ?? null);
 
                 return [
                     'id' => $profile->id,
@@ -134,15 +163,15 @@ class KycController extends Controller
                     'seller_tier' => $sellerTier,
                     'profile_type_label' => $labels[$type] ?? ucfirst($type),
                     'organization' => $org,
-                    'name' => $profile->user->name ?? '',
-                    'email' => $profile->user->email ?? '',
-                    'account_status' => $profile->user->status ?? 'pending',
+                    'name' => $userModel->name ?? '',
+                    'email' => $userModel->email ?? '',
+                    'account_status' => $userModel->status ?? 'pending',
                     'verification_status' => $profile->verification_status,
                     'profile_category' => $category,
                     'location' => $location,
-                    'bvn' => $profile->bvn ?? 'N/A',
-                    'nin' => $profile->nin ?? 'N/A',
-                    'rc_number' => $profile->registration_number ?? 'N/A',
+                    'bvn' => $bvn,
+                    'nin' => $nin,
+                    'rc_number' => $rc_number,
                     'documents' => Document::where('owner_type', $type)->where('owner_id', $profile->id)->get(),
                     'documents_count' => Document::where('owner_type', $type)->where('owner_id', $profile->id)->count(),
                 ];
@@ -154,8 +183,8 @@ class KycController extends Controller
         // Apply dropdown filter
         $profiles = $profiles->filter(function ($item) use ($filter) {
             return match ($filter) {
-                'seller' => $item['profile_type'] === 'seller' && $item['seller_tier'] !== 'export',
-                'export' => $item['profile_type'] === 'seller' && $item['seller_tier'] === 'export',
+                'seller' => $item['profile_type'] === 'seller',
+                'export' => $item['profile_type'] === 'export',
                 'buyer' => $item['profile_type'] === 'buyer',
                 'logistics' => $item['profile_type'] === 'logistics',
                 'admin' => $item['profile_type'] === 'admin',
@@ -175,7 +204,7 @@ class KycController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'profile_type' => 'required|in:seller,buyer,logistics,admin',
+            'profile_type' => 'required|in:seller,export,buyer,logistics,admin',
             'profile_id' => 'required|integer',
             'status' => 'required|in:approved,rejected,pending',
             'reason' => 'nullable|string|max:1000',
@@ -205,9 +234,24 @@ class KycController extends Controller
             $updateData['rejection_reason'] = null;
             if ($profileType === 'seller') {
                 $updateData['seller_program_status'] = 'approved';
+            } elseif ($profileType === 'export') {
+                // When an export profile is approved, update the seller's tier to export
+                if ($profile->sellerProfile) {
+                    $profile->sellerProfile->update(['seller_tier' => 'export']);
+                    if ($profile->sellerProfile->user) {
+                        $profile->sellerProfile->user->assignRole('exporter');
+                    }
+                }
             }
         } elseif ($status === 'rejected') {
             $updateData['rejection_reason'] = $request->reason;
+            if ($profileType === 'export' && $profile->sellerProfile) {
+                // If rejected, ensure the seller's tier is local
+                $profile->sellerProfile->update(['seller_tier' => 'local']);
+                if ($profile->sellerProfile->user) {
+                    $profile->sellerProfile->user->removeRole('exporter');
+                }
+            }
         }
 
         $profile->update($updateData);
@@ -233,11 +277,21 @@ class KycController extends Controller
                     $profileUser->assignRole('logistics');
                 }
                 event(new KycApproved($profileUser, $profileType, $profile, $user->name));
-                $profileUser->notify(new KycApprovedNotification($profileUser, $profileType));
+                
+                if ($profileType === 'export') {
+                    $profileUser->notify(new \App\Notifications\KycExporterApprovedNotification($profileUser));
+                } else {
+                    $profileUser->notify(new KycApprovedNotification($profileUser, $profileType));
+                }
             } elseif ($status === 'rejected') {
                 $reason = $request->reason;
                 event(new KycRejected($profileUser, $profileType, $profile, $reason, $user->name));
-                $profileUser->notify(new KycRejectedNotification($profileUser, $profileType, $reason));
+                
+                if ($profileType === 'export') {
+                    $profileUser->notify(new \App\Notifications\KycExporterRejectedNotification($profileUser, $reason));
+                } else {
+                    $profileUser->notify(new KycRejectedNotification($profileUser, $profileType, $reason));
+                }
             }
         }
 
@@ -251,7 +305,6 @@ class KycController extends Controller
 
     public function show($type, $id)
     {
-        
         $user = Auth::user();
 
         if (!$user->hasPermissionTo("view {$type} kyc") && !$user->hasPermissionTo("manage {$type} kyc")) {
@@ -263,15 +316,27 @@ class KycController extends Controller
             abort(404);
         }
 
-        $profile = $class::with('user')->findOrFail($id);
+        if ($type === 'export') {
+            $profile = $class::with('sellerProfile.user')->findOrFail($id);
+            $reviewModel = \App\Models\ExporterProfileKycItemReview::class;
+        } else {
+            $profile = $class::with('user')->findOrFail($id);
+            $reviewModel = \App\Models\SellerProfileKycItemReview::class;
+        }
+
         $documents = Document::where('owner_type', $type)->where('owner_id', $profile->id)->get();
-        $fieldReviews = \App\Models\SellerProfileKycItemReview::where('owner_type', $type)->where('owner_id', $profile->id)->get()->keyBy('item_key');
-        $fieldReviewHistory = \Illuminate\Support\Facades\DB::table('seller_profile_kyc_item_reviews_hist')
-            ->where('owner_type', $type)
-            ->where('owner_id', $profile->id)
-            ->whereNotNull('comment')
-            ->orderBy('changed_at', 'desc')
-            ->get();
+        $fieldReviews = $reviewModel::where('owner_type', $type)->where('owner_id', $profile->id)->get()->keyBy('item_key');
+        
+        $historyTable = $type === 'export' ? null : 'seller_profile_kyc_item_reviews_hist';
+        $fieldReviewHistory = collect();
+        if ($historyTable) {
+            $fieldReviewHistory = \Illuminate\Support\Facades\DB::table($historyTable)
+                ->where('owner_type', $type)
+                ->where('owner_id', $profile->id)
+                ->whereNotNull('comment')
+                ->orderBy('changed_at', 'desc')
+                ->get();
+        }
 
         return view('admin.kyc.show', compact('profile', 'type', 'documents', 'fieldReviews', 'fieldReviewHistory'));
     }
@@ -306,29 +371,21 @@ class KycController extends Controller
     public function reviewAllDocuments(Request $request)
     {
         $user = Auth::user();
-        if (!$user->hasRole('super-admin') && !$user->hasRole('admin')) {
+        if (!$user->hasRole('super-admin') && (!$user->hasPermissionTo("manage {$request->profile_type} kyc"))) {
             abort(403);
         }
 
         $request->validate([
-            'profile_type' => 'required|in:seller,buyer,logistics,admin',
+            'profile_type' => 'required|in:seller,export,buyer,logistics,admin',
             'profile_id' => 'required|integer',
-            'status' => 'required|in:approved,rejected',
-            'comment' => 'nullable|string|max:1000',
+            'documents' => 'nullable|array',
+            'documents.*' => 'nullable|in:approved,rejected',
+            'document_comments' => 'nullable|array',
+            'document_comments.*' => 'nullable|string|max:1000',
         ]);
 
         $selections = $request->documents ?? [];
-
-        if ($request->status === 'approved') {
-            Document::where('owner_type', $request->profile_type)
-                ->where('owner_id', $request->profile_id)
-                ->update([
-                    'status' => 'approved',
-                    'reviewed_by' => $user->id,
-                    'reviewed_at' => now(),
-                ]);
-            return redirect()->back()->with('success', 'All documents approved.');
-        }
+        $comments = $request->document_comments ?? [];
 
         $allDocs = Document::where('owner_type', $request->profile_type)
             ->where('owner_id', $request->profile_id)
@@ -343,17 +400,17 @@ class KycController extends Controller
                     'review_comment' => null,
                     'reviewed_at' => now(),
                 ]);
-            } else {
+            } elseif ($selected === 'rejected') {
                 $doc->update([
                     'status' => 'rejected',
                     'reviewed_by' => $user->id,
-                    'review_comment' => $request->comment,
+                    'review_comment' => $comments[$doc->id] ?? null,
                     'reviewed_at' => now(),
                 ]);
             }
         }
 
-        return redirect()->back()->with('success', 'Document review saved.');
+        return redirect()->back()->with('success', 'Document reviews saved successfully.');
     }
 
     public function reviewRegulatory(Request $request)
@@ -361,7 +418,7 @@ class KycController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'profile_type' => 'required|in:seller,buyer,logistics,admin',
+            'profile_type' => 'required|in:seller,export,buyer,logistics,admin',
             'profile_id' => 'required|integer',
             'fields' => 'nullable|array',
             'fields.*.status' => 'nullable|in:approved,rejected',
@@ -384,9 +441,11 @@ class KycController extends Controller
 
         $incoming = $request->fields ?? [];
         
+        $reviewModel = $profileType === 'export' ? \App\Models\ExporterProfileKycItemReview::class : \App\Models\SellerProfileKycItemReview::class;
+
         foreach ($incoming as $itemKey => $review) {
             if (!empty($review['status'])) {
-                \App\Models\SellerProfileKycItemReview::updateOrCreate(
+                $reviewModel::updateOrCreate(
                     [
                         'owner_type' => $profileType,
                         'owner_id' => $profileId,

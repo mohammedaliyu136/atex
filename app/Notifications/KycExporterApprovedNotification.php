@@ -7,17 +7,15 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class KycApprovedNotification extends Notification
+class KycExporterApprovedNotification extends Notification
 {
     use Queueable;
 
     public User $user;
-    public string $profileType;
 
-    public function __construct(User $user, string $profileType)
+    public function __construct(User $user)
     {
         $this->user = $user;
-        $this->profileType = $profileType;
     }
 
     public function via($notifiable): array
@@ -27,24 +25,21 @@ class KycApprovedNotification extends Notification
 
     public function toMail($notifiable): MailMessage
     {
-        $roleLabel = ucfirst($this->profileType);
-
         return (new MailMessage)
             ->mailer('smtp_kyc')
             ->from('kyc@atex.adamawastate.gov.ng', 'Adamawa Ecommerce platform KYC')
-            ->subject('Your Account Verification is Complete')
-            ->view('emails.kyc-approved', [
-                'user' => $this->user,
-                'profileType' => $this->profileType
+            ->subject('Your Exporter Verification is Complete')
+            ->view('emails.kyc-exporter-approved', [
+                'user' => $this->user
             ]);
     }
 
     public function toArray($notifiable): array
     {
         return [
-            'title' => 'Verification Approved',
-            'message' => 'Your profile verification is complete. You can now access all platform features.',
-            'profile_type' => $this->profileType,
+            'title' => 'Exporter Verification Approved',
+            'message' => 'Your exporter profile verification is complete. You can now access export features.',
+            'profile_type' => 'export',
         ];
     }
 }

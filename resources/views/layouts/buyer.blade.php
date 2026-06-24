@@ -85,7 +85,7 @@
                             <select class="w-[50px] bg-white text-black text-xs px-2 rounded-lg border border-gray-300 outline-none cursor-pointer h-full">
                                 <option>All</option>
                             </select>
-                            <input type="text" id="search-input" placeholder="Search ATEX"
+                            <input type="text" id="search-input" placeholder="Search {{ $system_settings['platform_name'] ?? 'ATEX' }}"
                                    class="flex-1 h-full px-3 text-sm text-black outline-none rounded-lg border border-gray-300 focus:border-[#febd69] transition-colors"
                                    autocomplete="off">
                             <button class="h-full rounded-lg amazon-gold bg-[#febd69] hover:bg-[#f3a847] text-black px-4 flex items-center justify-center transition-colors" onclick="performSearch()">
@@ -211,7 +211,7 @@
                         <div>
                             <h4 class="font-bold text-sm mb-3">Get to Know Us</h4>
                             <ul class="space-y-1.5 text-white/60">
-                                <li><a href="#" class="hover:underline">About ATEX</a></li>
+                                <li><a href="#" class="hover:underline">About {{ $system_settings['platform_name'] ?? 'ATEX' }}</a></li>
                                 <li><a href="#" class="hover:underline">Careers</a></li>
                                 <li><a href="#" class="hover:underline">Press Center</a></li>
                             </ul>
@@ -219,7 +219,11 @@
                         <div>
                             <h4 class="font-bold text-sm mb-3">Make Money with Us</h4>
                             <ul class="space-y-1.5 text-white/60">
-                                <li><a href="{{ route('seller.onboarding') }}" class="hover:underline">Sell on ATEX</a></li>
+                                @if(auth()->check() && auth()->user()->hasRole('seller'))
+                                    <li><a href="{{ route('exporter.onboarding') }}" class="hover:underline">Upgrade to Exporter</a></li>
+                                @else
+                                    <li><a href="{{ route('seller.onboarding') }}" class="hover:underline">Sell on {{ $system_settings['platform_name'] ?? 'ATEX' }}</a></li>
+                                @endif
                                 <li><a href="#" class="hover:underline">Become a Logistics Partner</a></li>
                                 <li><a href="#" class="hover:underline">Advertise Your Products</a></li>
                             </ul>

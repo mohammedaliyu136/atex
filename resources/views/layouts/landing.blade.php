@@ -57,7 +57,7 @@
                         <select class="w-[50px] bg-white text-black text-xs px-2 rounded-lg border border-gray-300 outline-none cursor-pointer h-full" style="color: black !important;">
                             <option>All</option>
                         </select>
-                        <input type="text" id="search-input" placeholder="Search ATEX"
+                        <input type="text" id="search-input" placeholder="Search {{ $system_settings['platform_name'] ?? 'ATEX' }}"
                                class="flex-1 h-full px-3 text-sm text-black outline-none rounded-lg border border-gray-300 focus:border-[#febd69] transition-colors"
                                autocomplete="off" style="color: black !important; font-family: 'Inter', sans-serif !important; margin: 0 !important;">
                         <button class="h-full rounded-lg amazon-gold bg-[#febd69] hover:bg-[#f3a847] text-black px-4 flex items-center justify-center transition-colors" onclick="window.location.href='{{ route('buyer.products.index') }}'">
