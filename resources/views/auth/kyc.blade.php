@@ -232,30 +232,57 @@
     @endif
 
     @unless($isPending)
-    <form method="POST" action="{{ route('kyc.onboarding.store') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('kyc.onboarding.store') }}" enctype="multipart/form-data" x-data="kycForm">
       @csrf
+
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/css/intlTelInput.css">
+      <style>.iti { width: 100%; }</style>
+      <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/intlTelInput.min.js"></script>
+      <script>
+      document.addEventListener('alpine:init', () => {
+          Alpine.data('kycForm', () => ({
+              country: '{{ old('country', $profile->country ?? 'Nigeria') }}',
+              codes: @php
+                  $codes = \Imujas9\World\Facades\Country::all()->mapWithKeys(fn($c) => [$c->name => $c->code]);
+              @endphp {!! $codes->toJson() !!},
+              states: [],
+              iti: null,
+              
+              async loadStates() {
+                  const code = this.codes[this.country];
+                  if (!code) { this.states = []; return; }
+                  const r = await fetch('{{ url("api/world/states") }}/' + code);
+                  this.states = await r.json();
+              },
+              
+              init() {
+                  this.loadStates();
+                  const input = document.querySelector('#phone_input');
+                  if (input) {
+                      this.iti = window.intlTelInput(input, {
+                          initialCountry: 'ng',
+                          utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/utils.js',
+                          separateDialCode: true,
+                      });
+                      this.syncPhoneCode();
+                  }
+              },
+              
+              syncPhoneCode() {
+                  if (this.iti) {
+                      const code = this.codes[this.country];
+                      if (code) {
+                          this.iti.setCountry(code.toLowerCase());
+                      }
+                  }
+              }
+          }));
+      });
+      </script>
 
       @if($user->hasRole('buyer') && !$user->hasRole('seller') && !$user->hasRole('logistics') && !$user->hasRole('admin'))
           <h1>Complete Your Profile</h1>
           <p class="mb-2">Please provide your shipping and billing details.</p>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div class="form-group">
-                <label class="form-label">Phone Number *</label>
-                <input type="text" name="phone_number" value="{{ old('phone_number', $profile->phone_number ?? '') }}" class="form-input" required>
-                @error('phone_number') <p class="input-error">{{ $message }}</p> @enderror
-            </div>
-            <div class="form-group">
-                <label class="form-label">Gender</label>
-                <select name="gender" class="form-input">
-                    <option value="">Select Gender</option>
-                    <option value="Male" {{ old('gender', $profile->gender ?? '') == 'Male' ? 'selected' : '' }}>Male</option>
-                    <option value="Female" {{ old('gender', $profile->gender ?? '') == 'Female' ? 'selected' : '' }}>Female</option>
-                    <option value="Other" {{ old('gender', $profile->gender ?? '') == 'Other' ? 'selected' : '' }}>Other</option>
-                </select>
-                @error('gender') <p class="input-error">{{ $message }}</p> @enderror
-            </div>
-          </div>
 
           <div class="form-group">
             <label class="form-label">Shipping Address *</label>
@@ -277,7 +304,12 @@
             </div>
             <div class="form-group">
                 <label class="form-label">State *</label>
-                <input type="text" name="state" value="{{ old('state', $profile->state ?? '') }}" class="form-input" required>
+                <select name="state" required class="form-input">
+                    <option value="">Select state</option>
+                    <template x-for="s in states" :key="s.code">
+                        <option :value="s.name" x-text="s.name" :selected="s.name === '{{ old('state', $profile->state ?? '') }}'"></option>
+                    </template>
+                </select>
                 @error('state') <p class="input-error">{{ $message }}</p> @enderror
             </div>
           </div>
@@ -290,8 +322,30 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Country *</label>
-                <input type="text" name="country" value="{{ old('country', $profile->country ?? 'Nigeria') }}" class="form-input" required>
+                <select name="country" x-model="country" @change="loadStates(); syncPhoneCode();" required class="form-input">
+                    @foreach(\Imujas9\World\Facades\Country::all() as $c)
+                        <option value="{{ $c->name }}" {{ old('country', $profile->country ?? 'Nigeria') == $c->name ? 'selected' : '' }}>{{ $c->flag }} {{ $c->name }}</option>
+                    @endforeach
+                </select>
                 @error('country') <p class="input-error">{{ $message }}</p> @enderror
+            </div>
+            
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label class="form-label">Phone Number *</label>
+                <input type="tel" id="phone_input" name="phone_number" value="{{ old('phone_number', $profile->phone_number ?? '') }}" class="form-input" required>
+                @error('phone_number') <p class="input-error">{{ $message }}</p> @enderror
+            </div>
+            <div class="form-group">
+                <label class="form-label">Gender</label>
+                <select name="gender" class="form-input">
+                    <option value="">Select Gender</option>
+                    <option value="Male" {{ old('gender', $profile->gender ?? '') == 'Male' ? 'selected' : '' }}>Male</option>
+                    <option value="Female" {{ old('gender', $profile->gender ?? '') == 'Female' ? 'selected' : '' }}>Female</option>
+                    <option value="Other" {{ old('gender', $profile->gender ?? '') == 'Other' ? 'selected' : '' }}>Other</option>
+                </select>
+                @error('gender') <p class="input-error">{{ $message }}</p> @enderror
             </div>
           </div>
       @else
@@ -307,7 +361,7 @@
           </div>
           <div class="form-group">
             <label class="form-label">Phone Number</label>
-            <input type="text" name="phone" value="{{ old('phone') }}" class="form-input" required>
+            <input type="tel" id="phone_input" name="phone" value="{{ old('phone') }}" class="form-input" required>
             @error('phone') <p class="input-error">{{ $message }}</p> @enderror
           </div>
         @else
