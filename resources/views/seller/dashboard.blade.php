@@ -1,25 +1,45 @@
 @extends('layouts.seller')
 
 @section('content')
-@if(isset($profile) && $profile->seller_tier === 'local')
+@if(isset($profile) && $profile->exporterProfile && $profile->exporterProfile->verification_status === 'pending')
+<div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="flex items-start gap-4">
+        <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+            <i data-lucide="clock" class="w-5 h-5 text-amber-600"></i>
+        </div>
+        <div>
+            <h2 class="text-lg font-bold text-amber-800">Export Upgrade Under Review</h2>
+            <p class="text-sm text-amber-700 mt-1">Your export seller upgrade has been submitted for verification. We will notify you once approved.</p>
+        </div>
+    </div>
+    <a href="{{ route('exporter.onboarding') }}" class="text-sm font-semibold px-6 py-2.5 rounded-lg border shrink-0 text-amber-800 bg-amber-200 border-amber-300 hover:bg-amber-300 whitespace-nowrap text-center transition-colors">
+        Preview Application
+    </a>
+</div>
+@elseif(isset($profile) && $profile->exporterProfile && $profile->exporterProfile->verification_status === 'rejected')
+<div class="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="flex items-start gap-4">
+        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i>
+        </div>
+        <div>
+            <h2 class="text-lg font-bold text-red-800">Export Upgrade Needs Attention</h2>
+            <p class="text-sm text-red-700 mt-1">Your export seller application was reviewed but needs corrections before approval.</p>
+        </div>
+    </div>
+    <a href="{{ route('exporter.onboarding') }}" class="text-sm font-semibold px-6 py-2.5 rounded-lg border shrink-0 text-white bg-red-600 border-red-700 hover:bg-red-700 whitespace-nowrap text-center">
+        Review & Fix
+    </a>
+</div>
+@elseif(isset($profile) && $profile->seller_tier === 'local')
 <div class="bg-gradient-to-r from-[#1a2a3a] to-[#0f1a26] rounded-2xl p-6 mb-6 flex items-center justify-between">
     <div>
         <h2 class="text-lg font-bold text-white">Upgrade to Export Seller</h2>
         <p class="text-sm text-white/60 mt-1">Reach international buyers and grow your export business.</p>
     </div>
-    <a href="{{ route('seller.onboarding.upgrade') }}" class="text-sm font-semibold px-6 py-2.5 rounded-lg border shrink-0 text-white bg-[#ffd814] border-[#fcd200] hover:bg-[#f7ca00]" style="color: #fff !important;">
+    <a href="{{ route('exporter.onboarding') }}" class="text-sm font-semibold px-6 py-2.5 rounded-lg border shrink-0 text-white bg-[#ffd814] border-[#fcd200] hover:bg-[#f7ca00]" style="color: #fff !important;">
         Upgrade Now
     </a>
-</div>
-@elseif(isset($profile) && $profile->seller_tier === 'export' && $profile->verification_status === 'pending')
-<div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-6 flex items-start gap-4">
-    <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-        <i data-lucide="clock" class="w-5 h-5 text-amber-600"></i>
-    </div>
-    <div>
-        <h2 class="text-lg font-bold text-amber-800">Export Upgrade Under Review</h2>
-        <p class="text-sm text-amber-700 mt-1">Your export seller upgrade has been submitted for verification. We will notify you once approved.</p>
-    </div>
 </div>
 @endif
 

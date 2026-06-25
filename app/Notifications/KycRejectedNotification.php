@@ -31,22 +31,15 @@ class KycRejectedNotification extends Notification
     {
         $roleLabel = ucfirst($this->profileType);
 
-        $message = (new MailMessage)
+        return (new MailMessage)
             ->mailer('smtp_kyc')
             ->from('kyc@atex.adamawastate.gov.ng', 'Adamawa Ecommerce platform KYC')
             ->subject('Your Account Verification Needs Attention')
-            ->greeting("Hello {$this->user->name}!")
-            ->line("Your {$roleLabel} profile verification has been reviewed, but we need you to address a few things before we can approve it.");
-
-        if ($this->reason) {
-            $message->line("Reason: {$this->reason}");
-        }
-
-        $message->line('Please review your profile information, update your documents, and resubmit.')
-            ->action('Review Verification Status', url('/kyc/onboarding'))
-            ->line('If you have any questions, please contact our support team.');
-
-        return $message;
+            ->view('emails.kyc-rejected', [
+                'user' => $this->user,
+                'profileType' => $this->profileType,
+                'reason' => $this->reason
+            ]);
     }
 
     public function toArray($notifiable): array

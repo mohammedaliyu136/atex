@@ -26,7 +26,7 @@ class SellerOnboardingController extends Controller
             }
 
             if ($profile->seller_tier === 'local' && $profile->verification_status === 'approved') {
-                return redirect()->route('seller.onboarding.upgrade');
+                return redirect()->route('exporter.onboarding');
             }
 
             if ($profile->verification_status === 'rejected') {
@@ -109,85 +109,6 @@ class SellerOnboardingController extends Controller
         return redirect()->route('seller.onboarding')->with('success', 'Your local seller registration has been submitted for review. You will be notified once approved.');
     }
 
-    public function showUpgrade()
-    {
-        $user = Auth::user();
-
-        if (!$user->hasRole('seller')) {
-            return redirect()->route('seller.onboarding');
-        }
-
-        $profile = SellerProfile::where('user_id', $user->id)->first();
-        if (!$profile) {
-            return redirect()->route('dashboard');
-        }
-
-        if ($profile->seller_tier === 'export') {
-            if ($profile->verification_status === 'pending') {
-                return view('seller.onboarding.pending');
-            }
-            return redirect()->route('dashboard');
-        }
-
-        if ($profile->verification_status !== 'approved') {
-            return view('seller.onboarding.pending');
-        }
-
-        return view('seller.onboarding.upgrade', compact('profile'));
-    }
-
-    public function storeUpgrade(Request $request)
-    {
-        $request->validate([
-            'registration_number' => 'nullable|string|max:255',
-            'tax_number' => 'nullable|string|max:255',
-            'bvn' => 'required|string|max:11',
-            'nin' => 'required|string|max:11',
-            'seller_brand_name' => 'nullable|string|max:255',
-            'bank_name' => 'required|string|max:255',
-            'account_number' => 'required|string|max:10',
-            'account_name' => 'required|string|max:255',
-            'trade_capacity' => 'nullable|string|max:255',
-            'years_of_experience' => 'nullable|integer|min:0',
-            'export_markets' => 'nullable|string|max:255',
-            'cac_document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'nepc_certificate' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'valid_id' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'proof_of_address' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'business_logo' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-        ]);
-
-        $user = Auth::user();
-        $profile = SellerProfile::where('user_id', $user->id)->firstOrFail();
-
-        $profile->update([
-            'registration_number' => $request->registration_number,
-            'tax_number' => $request->tax_number,
-            'bvn' => $request->bvn,
-            'nin' => $request->nin,
-            'seller_brand_name' => $request->seller_brand_name,
-            'bank_name' => $request->bank_name,
-            'account_number' => $request->account_number,
-            'account_name' => $request->account_name,
-            'trade_capacity' => $request->trade_capacity,
-            'years_of_experience' => $request->years_of_experience,
-            'export_markets' => $request->export_markets,
-            'seller_tier' => 'export',
-            'verification_status' => 'pending',
-            'seller_program_status' => 'pending',
-            'readiness_score' => 80,
-            'approved_at' => null,
-        ]);
-
-        $this->uploadDocument($request, 'cac_document', 'CAC Certificate', $profile->id);
-        $this->uploadDocument($request, 'nepc_certificate', 'NEPC Export Certificate', $profile->id);
-        $this->uploadDocument($request, 'valid_id', 'Valid Identification', $profile->id);
-        $this->uploadDocument($request, 'proof_of_address', 'Proof of Business Address', $profile->id);
-        $this->uploadDocument($request, 'business_logo', 'Business Logo', $profile->id);
-
-
-        return redirect()->route('seller.dashboard')->with('success', 'Your export seller upgrade has been submitted for verification. We will notify you once approved.');
-    }
 
     private function uploadDocument($request, $fieldName, $title, $profileId): void
     {

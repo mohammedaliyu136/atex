@@ -32,11 +32,27 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('seller_profiles', function (Blueprint $table) {
-            $table->dropColumn(['bank_name', 'account_number', 'account_name', 'trade_capacity']);
+            $columnsToDrop = [];
+            foreach (['bank_name', 'account_number', 'account_name', 'trade_capacity'] as $col) {
+                if (Schema::hasColumn('seller_profiles', $col)) {
+                    $columnsToDrop[] = $col;
+                }
+            }
+            if (!empty($columnsToDrop)) {
+                $table->dropColumn($columnsToDrop);
+            }
         });
 
         Schema::table('logistics_profiles', function (Blueprint $table) {
-            $table->dropColumn(['bank_name', 'account_number', 'account_name', 'fleet_size']);
+            $columnsToDrop = [];
+            foreach (['bank_name', 'account_number', 'account_name', 'fleet_size'] as $col) {
+                if (Schema::hasColumn('logistics_profiles', $col)) {
+                    $columnsToDrop[] = $col;
+                }
+            }
+            if (!empty($columnsToDrop)) {
+                $table->dropColumn($columnsToDrop);
+            }
         });
     }
 };

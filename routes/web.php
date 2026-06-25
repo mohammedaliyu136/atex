@@ -164,8 +164,6 @@ Route::middleware(['auth', 'verified', 'security_policy', 'legal_acceptance'])->
         // Seller Onboarding for Buyers
         Route::get('/become-a-seller', [\App\Http\Controllers\SellerOnboardingController::class, 'show'])->name('seller.onboarding');
         Route::post('/become-a-seller', [\App\Http\Controllers\SellerOnboardingController::class, 'store'])->name('seller.onboarding.store');
-        Route::get('/become-a-seller/upgrade', [\App\Http\Controllers\SellerOnboardingController::class, 'showUpgrade'])->name('seller.onboarding.upgrade');
-        Route::post('/become-a-seller/upgrade', [\App\Http\Controllers\SellerOnboardingController::class, 'storeUpgrade'])->name('seller.onboarding.upgrade.store');
     });
 });
 

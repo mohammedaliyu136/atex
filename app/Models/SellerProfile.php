@@ -81,4 +81,9 @@ class SellerProfile extends Model
     {
         return $this->hasOne(SellerProfileKyc::class);
     }
+
+    public function exporterProfile()
+    {
+        return $this->hasOne(ExporterProfile::class);
+    }
 }

@@ -5,25 +5,30 @@
 
 @section('content')
 @php
+    $userModel = $type === 'export' ? ($profile->sellerProfile->user ?? null) : ($profile->user ?? null);
+    $sellerProfile = $type === 'export' ? $profile->sellerProfile : null;
+
     $kycLabel = match ($type) {
         'buyer' => 'Buyer',
-        'seller' => ($profile->seller_tier ?? 'local') === 'export' ? 'Exporter' : 'Local Seller',
+        'seller' => 'Local Seller',
+        'export' => 'Exporter',
         'logistics' => 'Logistics',
         'admin' => 'Admin',
         default => ucfirst($type),
     };
     $kycIcon = match ($type) {
         'buyer' => 'shopping-bag',
-        'seller' => ($profile->seller_tier ?? 'local') === 'export' ? 'globe' : 'store',
+        'seller' => 'store',
+        'export' => 'globe',
         'logistics' => 'truck',
         default => 'building-2',
     };
-    $isLocalSeller = $type === 'seller' && ($profile->seller_tier ?? 'local') !== 'export';
+    $isLocalSeller = $type === 'seller';
 @endphp
 <div class="mb-8 flex justify-between items-center">
     <div>
         <h1 class="text-2xl font-bold text-slate-800">{{ $kycLabel }} KYC Verification</h1>
-        <p class="text-slate-500 text-sm">Detailed {{ $kycLabel }} KYC profile for {{ $profile->business_name ?? $profile->company_name ?? ($profile->user->name ?? 'User') }}</p>
+        <p class="text-slate-500 text-sm">Detailed {{ $kycLabel }} KYC profile for {{ $profile->business_name ?? $sellerProfile->business_name ?? $profile->company_name ?? ($userModel->name ?? 'User') }}</p>
     </div>
     <div class="flex gap-3">
         <a href="{{ route('admin.kyc.index') }}" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl font-medium flex items-center hover:bg-slate-50 transition-colors">
@@ -54,8 +59,8 @@
                 {{ $kycLabel }}
             </div>
             
-            <h2 class="text-xl font-bold text-slate-800 mb-1">{{ $profile->business_name ?? $profile->company_name ?? $profile->full_name ?? $profile->user->name ?? 'N/A' }}</h2>
-            <p class="text-slate-500 text-sm mb-4">{{ $profile->user->email ?? 'N/A' }}</p>
+            <h2 class="text-xl font-bold text-slate-800 mb-1">{{ $profile->business_name ?? $sellerProfile->business_name ?? $profile->company_name ?? $profile->full_name ?? $userModel->name ?? 'N/A' }}</h2>
+            <p class="text-slate-500 text-sm mb-4">{{ $userModel->email ?? 'N/A' }}</p>
             
             <div class="inline-flex px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-6
                 {{ $profile->verification_status === 'approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : '' }}
@@ -77,7 +82,7 @@
                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Account Owner</p>
                     <p class="text-sm text-slate-700 font-medium flex items-center">
                         <i data-lucide="user" class="w-4 h-4 mr-2 text-slate-400"></i>
-                        {{ $profile->user->name ?? 'N/A' }}
+                        {{ $userModel->name ?? 'N/A' }}
                     </p>
                 </div>
                 <div>
@@ -91,14 +96,21 @@
                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Country</p>
                     <p class="text-sm text-slate-700 font-medium flex items-start">
                         <i data-lucide="globe" class="w-4 h-4 mr-2 text-slate-400 mt-0.5 shrink-0"></i>
-                        {{ $profile->country ?? 'N/A' }}
+                        {{ $profile->country ?? $sellerProfile->country ?? 'N/A' }}
                     </p>
                 </div>
                 <div>
                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">State</p>
                     <p class="text-sm text-slate-700 font-medium flex items-start">
                         <i data-lucide="map" class="w-4 h-4 mr-2 text-slate-400 mt-0.5 shrink-0"></i>
-                        {{ $profile->state ?? 'N/A' }}
+                        {{ $profile->state ?? $sellerProfile->state ?? 'N/A' }}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Address</p>
+                    <p class="text-sm text-slate-700 font-medium flex items-start">
+                        <i data-lucide="map-pin" class="w-4 h-4 mr-2 text-slate-400 mt-0.5 shrink-0"></i>
+                        {{ $profile->address ?? $sellerProfile->address ?? 'N/A' }}
                     </p>
                 </div>
                 <div>
@@ -263,11 +275,6 @@
                     'seller_brand_name' => ['label' => 'Brand Name', 'value' => $profile->seller_brand_name ?? 'Not provided'],
                     'phone' => ['label' => 'Phone Number', 'value' => $profile->phone ?? 'Not provided'],
                 ];
-                if ($kycLabel === 'Exporter') {
-                    $businessFields['trade_capacity'] = ['label' => 'Monthly Trade Capacity', 'value' => $profile->trade_capacity ?? 'Not provided'];
-                    $businessFields['export_markets'] = ['label' => 'Export Markets', 'value' => $profile->export_markets ?? 'Not provided'];
-                    $businessFields['years_of_experience'] = ['label' => 'Years of Experience', 'value' => ($profile->years_of_experience !== null && $profile->years_of_experience !== '') ? $profile->years_of_experience : 'Not provided'];
-                }
             @endphp
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach($businessFields as $field => $info)
@@ -277,6 +284,46 @@
             @if($profile->business_description)
                 <div class="mt-4">
                     <x-kyc-field field="business_description" label="Business Description" :value="$profile->business_description" :reviews="$fieldReviews" :profile="$profile" />
+                </div>
+            @endif
+        </div>
+        @endif
+
+        @if($type === 'export')
+        <!-- Export Details -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+            <div class="flex items-center mb-6">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mr-4">
+                    <i data-lucide="globe" class="w-5 h-5 text-amber-600"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">Export Application Details</h3>
+            </div>
+            @php
+                $exportFields = [
+                    'nepc_number' => ['label' => 'NEPC Registration Number', 'value' => $profile->nepc_number ?? 'Not provided'],
+                    'export_capacity' => ['label' => 'Monthly Export Capacity', 'value' => $profile->export_capacity ?? 'Not provided'],
+                    'export_markets' => ['label' => 'Export Markets', 'value' => $profile->export_markets ?? 'Not provided'],
+                    'years_of_experience' => ['label' => 'Years of Experience', 'value' => ($profile->years_of_experience !== null && $profile->years_of_experience !== '') ? $profile->years_of_experience : 'Not provided'],
+                ];
+            @endphp
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @foreach($exportFields as $field => $info)
+                    <x-kyc-field :field="$field" :label="$info['label']" :value="$info['value']" :reviews="$fieldReviews" :profile="$profile" />
+                @endforeach
+            </div>
+            @if($profile->nepc_certificate_path)
+                <div class="mt-4 pt-4 border-t border-slate-100">
+                    <x-kyc-field field="nepc_certificate_path" label="NEPC Certificate" value="" :reviews="$fieldReviews" :profile="$profile">
+                        <a href="{{ asset('storage/' . $profile->nepc_certificate_path) }}" target="_blank" class="flex items-center p-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors group bg-white max-w-sm">
+                            <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center mr-3 text-indigo-600 group-hover:bg-indigo-200 shrink-0">
+                                <i data-lucide="file-check-2" class="w-5 h-5"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold text-slate-800 truncate">View Certificate</p>
+                                <p class="text-xs text-indigo-600 font-medium">Click to open &rarr;</p>
+                            </div>
+                        </a>
+                    </x-kyc-field>
                 </div>
             @endif
         </div>
@@ -343,7 +390,7 @@
         </div>
         @endif
 
-        @unless($type === 'buyer')
+        @unless(in_array($type, ['buyer', 'export']))
         <!-- Nigerian KYC Info -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
             <div class="flex items-center justify-between mb-6">
@@ -396,7 +443,7 @@
         @endunless
         </form>
 
-        @if($documents->count() > 0 || $type !== 'seller')
+        @if(($documents->count() > 0 || $type !== 'seller') && $type !== 'export')
         <!-- Uploaded Documents -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
             <div class="flex items-center justify-between mb-6">
@@ -416,67 +463,68 @@
                     <input type="hidden" name="profile_id" value="{{ $profile->id }}">
 
                     @if($profile->verification_status !== 'approved')
-                        <div class="flex gap-2 mb-5">
-                            <button type="submit" name="status" value="approved" class="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors shadow-sm"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Approve All</button>
-                            <button type="submit" name="status" value="rejected" class="flex items-center gap-1.5 px-4 py-2 bg-white text-red-600 border border-red-200 rounded-xl text-xs font-bold hover:bg-red-50 transition-colors"><i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Reject All</button>
+                        <div class="flex justify-between items-center mb-5">
+                            <div>
+                                <h4 class="font-bold text-slate-800">Document Reviews</h4>
+                                <p class="text-xs text-slate-500">Approve or reject individual documents</p>
+                            </div>
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm">Save Document Reviews</button>
                         </div>
                     @endif
 
-                    <div class="space-y-2">
+                    <div class="space-y-4">
                         @foreach($documents as $doc)
                             @php
                                 $isApproved = $doc->status === 'approved';
                                 $isRejected = $doc->status === 'rejected';
                                 $borderClass = $isApproved ? 'border-emerald-200 bg-emerald-50/30' : ($isRejected ? 'border-red-200 bg-red-50/30' : 'border-slate-200 bg-white');
                             @endphp
-                            <div class="flex items-center justify-between p-3 rounded-xl border {{ $borderClass }} transition-colors">
-                                <div class="flex items-center min-w-0 gap-3">
-                                    <div class="w-10 h-10 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-sm">
-                                        @php
-                                            $ext = pathinfo($doc->path, PATHINFO_EXTENSION);
-                                            $icon = 'file-text';
-                                            $color = 'text-slate-400';
-                                            if($isApproved) $color = 'text-emerald-500';
-                                            if($isRejected) $color = 'text-red-400';
-                                            if(in_array($ext, ['jpg','jpeg','png'])) $icon = 'image';
-                                            if(in_array($ext, ['pdf'])) $icon = 'file-check-2';
-                                        @endphp
-                                        <i data-lucide="{{ $icon }}" class="w-5 h-5 {{ $color }}"></i>
-                                    </div>
-                                    <div class="min-w-0">
-                                        <p class="text-sm font-semibold text-slate-800 truncate">{{ $doc->title }}</p>
-                                        <div class="flex items-center gap-2 text-xs text-slate-500">
-                                            <span class="uppercase tracking-wider">{{ $ext }}</span>
-                                            @if($profile->verification_status !== 'approved')
-                                                <div class="flex rounded-lg border border-slate-200 overflow-hidden bg-white divide-x divide-slate-200">
-                                                    <input type="radio" name="documents[{{ $doc->id }}]" value="approved" class="hidden peer/ok" id="doc_ok_{{ $doc->id }}" {{ $isApproved ? 'checked' : '' }}>
-                                                    <label for="doc_ok_{{ $doc->id }}" class="px-2.5 py-1 text-xs font-semibold cursor-pointer transition-colors peer-checked/ok:bg-emerald-600 peer-checked/ok:text-white text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 select-none">Approve</label>
-                                                    <input type="radio" name="documents[{{ $doc->id }}]" value="rejected" class="hidden peer/no" id="doc_no_{{ $doc->id }}" {{ $isRejected ? 'checked' : '' }}>
-                                                    <label for="doc_no_{{ $doc->id }}" class="px-2.5 py-1 text-xs font-semibold cursor-pointer transition-colors peer-checked/no:bg-red-600 peer-checked/no:text-white text-slate-500 hover:text-red-700 hover:bg-red-50 select-none">Reject</label>
-                                                </div>
+                            <div class="rounded-xl border {{ $borderClass }} transition-colors overflow-hidden">
+                                <div class="flex items-center justify-between p-3">
+                                    <div class="flex items-center min-w-0 gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-sm">
+                                            @php
+                                                $ext = pathinfo($doc->path, PATHINFO_EXTENSION);
+                                                $icon = 'file-text';
+                                                $color = 'text-slate-400';
+                                                if($isApproved) $color = 'text-emerald-500';
+                                                if($isRejected) $color = 'text-red-400';
+                                                if(in_array(strtolower($ext), ['jpg','jpeg','png'])) $icon = 'image';
+                                                if(in_array(strtolower($ext), ['pdf'])) $icon = 'file-check-2';
+                                            @endphp
+                                            <i data-lucide="{{ $icon }}" class="w-5 h-5 {{ $color }}"></i>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-semibold text-slate-800 truncate">{{ $doc->title }}</p>
+                                            <div class="flex items-center gap-2 text-xs text-slate-500">
+                                                <span class="uppercase tracking-wider">{{ $ext }}</span>
+                                                @if($profile->verification_status !== 'approved')
+                                                    <div class="flex rounded-lg border border-slate-200 overflow-hidden bg-white divide-x divide-slate-200">
+                                                        <input type="radio" name="documents[{{ $doc->id }}]" value="approved" class="hidden peer/ok" id="doc_ok_{{ $doc->id }}" {{ $isApproved ? 'checked' : '' }} onchange="document.getElementById('doc_comment_container_{{ $doc->id }}').classList.add('hidden')">
+                                                        <label for="doc_ok_{{ $doc->id }}" class="px-2.5 py-1 text-xs font-semibold cursor-pointer transition-colors peer-checked/ok:bg-emerald-600 peer-checked/ok:text-white text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 select-none">Approve</label>
+                                                        <input type="radio" name="documents[{{ $doc->id }}]" value="rejected" class="hidden peer/no" id="doc_no_{{ $doc->id }}" {{ $isRejected ? 'checked' : '' }} onchange="document.getElementById('doc_comment_container_{{ $doc->id }}').classList.remove('hidden')">
+                                                        <label for="doc_no_{{ $doc->id }}" class="px-2.5 py-1 text-xs font-semibold cursor-pointer transition-colors peer-checked/no:bg-red-600 peer-checked/no:text-white text-slate-500 hover:text-red-700 hover:bg-red-50 select-none">Reject</label>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            @if($doc->review_comment)
+                                                <p class="text-xs text-red-600 mt-0.5">{{ $doc->review_comment }}</p>
                                             @endif
                                         </div>
-                                        @if($doc->review_comment)
-                                            <p class="text-xs text-red-600 mt-0.5">{{ $doc->review_comment }}</p>
-                                        @endif
                                     </div>
+                                    <a href="{{ asset('storage/' . $doc->path) }}" target="_blank" class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-400 flex items-center justify-center hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-all shrink-0">
+                                        <i data-lucide="external-link" class="w-4 h-4"></i>
+                                    </a>
                                 </div>
-                                <a href="{{ asset('storage/' . $doc->path) }}" target="_blank" class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-400 flex items-center justify-center hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-all shrink-0">
-                                    <i data-lucide="external-link" class="w-4 h-4"></i>
-                                </a>
+                                @if($profile->verification_status !== 'approved')
+                                    <div id="doc_comment_container_{{ $doc->id }}" class="px-3 pb-3 pt-1 border-t border-slate-100 {{ $isRejected ? '' : 'hidden' }}">
+                                        <label for="doc_comment_{{ $doc->id }}" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Reason for Rejection</label>
+                                        <input type="text" id="doc_comment_{{ $doc->id }}" name="document_comments[{{ $doc->id }}]" value="{{ $doc->review_comment }}" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg focus:border-red-300 focus:ring-1 focus:ring-red-200 placeholder:text-slate-400" placeholder="e.g., Image is too blurry to read">
+                                    </div>
+                                @endif
                             </div>
                         @endforeach
                     </div>
-
-                    @if($profile->verification_status !== 'approved')
-                        <div class="mt-5 pt-5 border-t border-slate-100">
-                            <label for="bulk_note" class="block text-sm font-semibold text-slate-700 mb-1.5">Notes for applicant</label>
-                            <div class="flex gap-2">
-                                <textarea id="bulk_note" name="comment" rows="1" class="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm resize-none" placeholder="Tell them what needs to be fixed..."></textarea>
-                                <button type="submit" name="status" value="rejected" class="px-5 py-2 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition-colors shadow-sm whitespace-nowrap">Reject & Send Notes</button>
-                            </div>
-                        </div>
-                    @endif
                 </form>
             @else
                 <div class="text-center py-12 px-6 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">

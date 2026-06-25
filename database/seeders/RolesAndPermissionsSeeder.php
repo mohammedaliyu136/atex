@@ -60,6 +60,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'KYC Management' => [
                 'view seller kyc',
                 'manage seller kyc',
+                'view export kyc',
+                'manage export kyc',
                 'view buyer kyc',
                 'manage buyer kyc',
                 'view logistics kyc',
