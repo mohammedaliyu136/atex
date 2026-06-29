@@ -63,12 +63,22 @@
             <div class="form-row-g2">
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" name="password" id="password" placeholder="Min. 8 characters" required oninput="checkPwStrength(this.value)">
+                    <div style="position: relative;">
+                        <input type="password" name="password" id="password" placeholder="Min. 8 characters" required oninput="checkPwStrength(this.value)" style="padding-right: 40px;">
+                        <button type="button" onclick="togglePasswordVisibility('password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 0; color: #64748b; display: flex; align-items: center; justify-content: center;">
+                            <svg id="eye-icon-password" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
                     <div class="pw-strength" id="pwStrength"></div>
                 </div>
                 <div class="form-group">
                     <label for="password_confirmation">Confirm Password</label>
-                    <input type="password" name="password_confirmation" id="password_confirmation" placeholder="Repeat password" required oninput="checkPwMatch()">
+                    <div style="position: relative;">
+                        <input type="password" name="password_confirmation" id="password_confirmation" placeholder="Repeat password" required oninput="checkPwMatch()" style="padding-right: 40px;">
+                        <button type="button" onclick="togglePasswordVisibility('password_confirmation')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 0; color: #64748b; display: flex; align-items: center; justify-content: center;">
+                            <svg id="eye-icon-password_confirmation" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
                     <div class="hint" id="pwMatchHint"></div>
                 </div>
             </div>
@@ -119,6 +129,19 @@ function checkPwMatch() {
     if (!c.value) { hint.textContent = ''; return; }
     hint.textContent = p.value === c.value ? '✓ Passwords match' : '✗ Passwords do not match';
     hint.style.color = p.value === c.value ? '#16a34a' : '#ef4444';
+}
+
+function togglePasswordVisibility(id) {
+    var input = document.getElementById(id);
+    var icon = document.getElementById('eye-icon-' + id);
+    if (!input || !icon) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.innerHTML = '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>';
+    } else {
+        input.type = 'password';
+        icon.innerHTML = '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>';
+    }
 }
 </script>
 @endsection

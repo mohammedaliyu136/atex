@@ -132,9 +132,27 @@
               <div class="user-avatar" id="userAvatar" onclick="toggleDropdown(event)">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</div>
               <div class="user-dropdown" id="userDropdown">
                 <div class="header" id="dropdownHeader"><strong>{{ auth()->user()->name }}</strong><span>{{ auth()->user()->email }}</span></div>
-                <a href="{{ route('buyer.profile.show') }}">🔐 KYC Verification <span class="badge verified">Verified</span></a>
-                <a href="{{ route('buyer.orders.index') }}">📦 My Orders</a>
-                <a href="{{ route('buyer.cart.index') }}">🛒 My Cart</a>
+                @php
+                    $dashboardRoute = 'admin.dashboard';
+                    $profileRoute = 'admin.profile';
+                    if (Auth::user()->hasRole('seller')) {
+                        $dashboardRoute = 'seller.dashboard';
+                        $profileRoute = 'seller.profile.show';
+                    } elseif (Auth::user()->hasRole('buyer')) {
+                        $dashboardRoute = 'buyer.dashboard';
+                        $profileRoute = 'buyer.profile.show';
+                    } elseif (Auth::user()->hasRole('logistics')) {
+                        $dashboardRoute = 'logistics.dashboard';
+                    }
+                @endphp
+                <a href="{{ route($dashboardRoute) }}">📊 Dashboard</a>
+                <a href="{{ route($profileRoute) }}">👤 My Profile</a>
+                @if(Auth::user()->hasRole('buyer'))
+                  <a href="{{ route('buyer.orders.index') }}">📦 My Orders</a>
+                  <a href="{{ route('buyer.cart.index') }}">🛒 My Cart</a>
+                @elseif(Auth::user()->hasRole('seller'))
+                  <a href="{{ route('seller.orders.index') }}">📦 Orders</a>
+                @endif
                 <hr>
                 <form method="POST" action="{{ route('logout') }}" id="logoutForm">
                   @csrf
@@ -180,10 +198,70 @@
       @yield('full_width_content')
     @else
       <div class="container" style="padding-top: 24px; padding-bottom: 40px;">
+        @if(session('success'))
+            <div style="background-color: #d1e7dd; border: 1px solid #badbcc; color: #0f5132; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if(session('warning'))
+            <div style="background-color: #fff3cd; border: 1px solid #ffecb5; color: #664d03; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
+                ⚠️ {{ session('warning') }}
+            </div>
+        @endif
+        @if(session('error'))
+            <div style="background-color: #f8d7da; border: 1px solid #f5c2c7; color: #842029; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
+                ❌ {{ session('error') }}
+            </div>
+        @endif
         @yield('content')
       </div>
     @endif
   </main>
+
+  <!-- Footer -->
+  <footer class="bg-[#232f3e] text-white text-xs mt-10">
+      <div class="border-b border-white/10">
+          <div class="max-w-[1500px] mx-auto px-4 py-8">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                  <div>
+                      <h4 class="font-bold text-sm mb-3">Get to Know Us</h4>
+                      <ul class="space-y-1.5 text-white/60">
+                          <li><a href="#" class="hover:underline">About ATEX</a></li>
+                          <li><a href="#" class="hover:underline">Careers</a></li>
+                          <li><a href="#" class="hover:underline">Press Center</a></li>
+                      </ul>
+                  </div>
+                  <div>
+                      <h4 class="font-bold text-sm mb-3">Make Money with Us</h4>
+                      <ul class="space-y-1.5 text-white/60">
+                          <li><a href="{{ route('seller.onboarding') }}" class="hover:underline">Sell on ATEX</a></li>
+                          <li><a href="#" class="hover:underline">Become a Logistics Partner</a></li>
+                          <li><a href="#" class="hover:underline">Advertise Your Products</a></li>
+                      </ul>
+                  </div>
+                  <div>
+                      <h4 class="font-bold text-sm mb-3">Let Us Help You</h4>
+                      <ul class="space-y-1.5 text-white/60">
+                          <li><a href="#" class="hover:underline">Your Account</a></li>
+                          <li><a href="#" class="hover:underline">Your Orders</a></li>
+                          <li><a href="#" class="hover:underline">Shipping Rates & Policies</a></li>
+                      </ul>
+                  </div>
+                  <div>
+                      <h4 class="font-bold text-sm mb-3">Connect</h4>
+                      <ul class="space-y-1.5 text-white/60">
+                          <li><a href="#" class="hover:underline">Facebook</a></li>
+                          <li><a href="#" class="hover:underline">Twitter</a></li>
+                          <li><a href="#" class="hover:underline">Instagram</a></li>
+                      </ul>
+                  </div>
+              </div>
+          </div>
+      </div>
+      <div class="py-4 text-center text-white/40 text-[11px]">
+          &copy; {{ date('Y') }} Adamawa Export Market (ATEX). All rights reserved.
+      </div>
+  </footer>
 
   <!-- ═══ CART OVERLAY & SIDEBAR ═══ -->
   <div class="cart-overlay" id="cartOverlay" onclick="toggleCart()" style="position:fixed;inset:0;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity var(--transition);z-index:200"></div>

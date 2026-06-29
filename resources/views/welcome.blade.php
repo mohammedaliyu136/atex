@@ -430,46 +430,7 @@ footer ul a:hover { color: #fff; }
   </div>
 </section>
 
-<!-- ═══ FOOTER ═══ -->
-<footer>
-  <div class="container">
-    <div>
-      <a href="{{ route('home') }}" style="color:#fff;font-size:1.3rem;font-weight:800">ATEX<span style="color:var(--primary)">.ng</span></a>
-      <p style="margin-top:12px">The all-in-one platform for global import and export. Source, manage, and ship with confidence.</p>
-    </div>
-    <div>
-      <h4>Platform</h4>
-      <ul>
-        <li><a href="{{ route('buyer.products.index') }}">Product Catalog</a></li>
-        <li><a href="#import">Import Products</a></li>
-        <li><a href="#">Supplier Network</a></li>
-        <li><a href="#">Trade Docs</a></li>
-      </ul>
-    </div>
-    <div>
-      <h4>Resources</h4>
-      <ul>
-        <li><a href="#">Shipping Guide</a></li>
-        <li><a href="#">Customs Help</a></li>
-        <li><a href="#">Trade Blog</a></li>
-        <li><a href="#">FAQ</a></li>
-      </ul>
-    </div>
-    <div>
-      <h4>Company</h4>
-      <ul>
-        <li><a href="#">About</a></li>
-        <li><a href="#">Contact</a></li>
-        <li><a href="#">Privacy</a></li>
-        <li><a href="#">Terms</a></li>
-      </ul>
-    </div>
-    <div class="footer-bottom">
-      <span>&copy; 2026 ATEX Platform. All rights reserved.</span>
-      <span>Made for Adamawa's exporters ♥</span>
-    </div>
-  </div>
-</footer>
+
 
 <!-- ═══ CART OVERLAY & SIDEBAR ═══ -->
 <div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>

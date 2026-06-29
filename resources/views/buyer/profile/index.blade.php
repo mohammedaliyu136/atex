@@ -7,7 +7,7 @@
         <p class="text-sm text-[#565959]">Manage your profile and security preferences</p>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6" x-data="{ isEditing: false }">
         <!-- Profile Card + Tab Nav -->
         <div class="lg:col-span-1">
             <div class="bg-white rounded-lg border border-[#e7e7e7] overflow-hidden mb-4">
@@ -56,14 +56,21 @@
             <!-- Profile Details -->
             <div x-show="tab === 'profile'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                 <div class="bg-white rounded-lg border border-[#e7e7e7] overflow-hidden">
-                    <div class="px-6 py-4 border-b border-[#e7e7e7] flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-lg bg-[#f0f2f2] flex items-center justify-center">
-                            <i data-lucide="user" class="w-4 h-4 text-[#007185]"></i>
+                    <div class="px-6 py-4 border-b border-[#e7e7e7] flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-[#f0f2f2] flex items-center justify-center">
+                                <i data-lucide="user" class="w-4 h-4 text-[#007185]"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-sm font-bold text-[#0f1111]">Profile Details</h2>
+                                <p class="text-xs text-[#565959]">Manage your personal and buyer information.</p>
+                            </div>
                         </div>
-                        <div>
-                            <h2 class="text-sm font-bold text-[#0f1111]">Profile Details</h2>
-                            <p class="text-xs text-[#565959]">Manage your personal and buyer information.</p>
-                        </div>
+                        <button type="button" @click="isEditing = !isEditing" 
+                                class="text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-1"
+                                :class="isEditing ? 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300' : 'amazon-btn'">
+                            <span x-text="isEditing ? '✕ Cancel' : '⚙️ Edit Profile'"></span>
+                        </button>
                     </div>
 
                     <form action="{{ route('buyer.profile.update-info') }}" method="POST" class="p-6">
@@ -73,6 +80,8 @@
                             <div>
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">Full Name</label>
                                 <input type="text" name="name" value="{{ old('name', $user->name) }}" required
+                                       :disabled="!isEditing"
+                                       :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                        class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
                                 @error('name') <p class="mt-1 text-xs text-red-500 font-medium">{{ $message }}</p> @enderror
                             </div>
@@ -85,18 +94,22 @@
                             <div>
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">Account Phone</label>
                                 <input type="text" name="phone" value="{{ old('phone', $user->phone) }}"
+                                       :disabled="!isEditing"
+                                       :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                        class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
                                 @error('phone') <p class="mt-1 text-xs text-red-500 font-medium">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">Business/Buyer Phone</label>
                                 <input type="text" name="phone_number" value="{{ old('phone_number', $buyerProfile->phone_number) }}"
+                                       :disabled="!isEditing"
+                                       :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                        class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
                                 @error('phone_number') <p class="mt-1 text-xs text-red-500 font-medium">{{ $message }}</p> @enderror
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">Gender</label>
-                                <select name="gender" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors appearance-none">
+                                <select name="gender" :disabled="!isEditing" :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors appearance-none">
                                     <option value="">Select Gender</option>
                                     <option value="Male" {{ old('gender', $buyerProfile->gender) == 'Male' ? 'selected' : '' }}>Male</option>
                                     <option value="Female" {{ old('gender', $buyerProfile->gender) == 'Female' ? 'selected' : '' }}>Female</option>
@@ -106,40 +119,48 @@
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">Shipping Address</label>
-                                <textarea name="shipping_address" rows="2" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">{{ old('shipping_address', $buyerProfile->shipping_address) }}</textarea>
+                                <textarea name="shipping_address" rows="2" :disabled="!isEditing" :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">{{ old('shipping_address', $buyerProfile->shipping_address) }}</textarea>
                                 @error('shipping_address') <p class="mt-1 text-xs text-red-500 font-medium">{{ $message }}</p> @enderror
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">Billing Address</label>
-                                <textarea name="billing_address" rows="2" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">{{ old('billing_address', $buyerProfile->billing_address) }}</textarea>
+                                <textarea name="billing_address" rows="2" :disabled="!isEditing" :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">{{ old('billing_address', $buyerProfile->billing_address) }}</textarea>
                                 @error('billing_address') <p class="mt-1 text-xs text-red-500 font-medium">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">City</label>
                                 <input type="text" name="city" value="{{ old('city', $buyerProfile->city) }}"
+                                       :disabled="!isEditing"
+                                       :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                        class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
                                 @error('city') <p class="mt-1 text-xs text-red-500 font-medium">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">State / Province</label>
                                 <input type="text" name="state" value="{{ old('state', $buyerProfile->state) }}"
+                                       :disabled="!isEditing"
+                                       :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                        class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
                                 @error('state') <p class="mt-1 text-xs text-red-500 font-medium">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">Zip Code</label>
                                 <input type="text" name="zip_code" value="{{ old('zip_code', $buyerProfile->zip_code) }}"
+                                       :disabled="!isEditing"
+                                       :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                        class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
                                 @error('zip_code') <p class="mt-1 text-xs text-red-500 font-medium">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-[#565959] mb-1.5">Country</label>
                                 <input type="text" name="country" value="{{ old('country', $buyerProfile->country) }}"
+                                       :disabled="!isEditing"
+                                       :class="!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''"
                                        class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-[#0f1111] focus:border-[#007185] focus:ring-1 focus:ring-[#007185] outline-none transition-colors">
                                 @error('country') <p class="mt-1 text-xs text-red-500 font-medium">{{ $message }}</p> @enderror
                             </div>
                         </div>
-                        <div class="mt-6">
+                        <div class="mt-6" x-show="isEditing">
                             <button type="submit" class="amazon-btn text-sm font-semibold px-6 py-2.5 rounded-lg border">
                                 Save Profile Details
                             </button>

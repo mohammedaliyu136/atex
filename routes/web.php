@@ -136,7 +136,7 @@ Route::middleware(['auth', 'verified', 'security_policy', 'legal_acceptance'])->
     Route::get('/exporter/onboarding', [\App\Http\Controllers\Auth\KycOnboardingController::class, 'show'])->name('exporter.onboarding');
 });
 
-Route::middleware(['auth', 'verified', 'security_policy', 'legal_acceptance'])->group(function () {
+Route::middleware(['auth', 'verified', 'security_policy', 'legal_acceptance', 'buyer_profile_completed'])->group(function () {
     Route::prefix('buyer')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'buyerDashboard'])->name('buyer.dashboard');
         

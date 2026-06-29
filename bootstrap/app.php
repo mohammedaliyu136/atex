@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'security_policy' => \App\Http\Middleware\EnforceSecurityPolicy::class,
             'kyc_completed' => \App\Http\Middleware\EnsureKycCompleted::class,
             'legal_acceptance' => \App\Http\Middleware\EnforceDocumentAcceptance::class,
+            'buyer_profile_completed' => \App\Http\Middleware\EnsureBuyerProfileCompleted::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
