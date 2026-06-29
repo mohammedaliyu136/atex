@@ -21,6 +21,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        \Illuminate\Support\Facades\DB::table('seller_profiles')
+            ->whereNull('lga')
+            ->update(['lga' => 'N/A']);
+
         Schema::table('seller_profiles', function (Blueprint $table) {
             $table->string('lga')->nullable(false)->change();
         });

@@ -124,10 +124,6 @@ Route::post('/checkout', function (\Illuminate\Http\Request $request) {
     return response()->json(['status' => 'ok', 'order_ids' => $orderIds]);
 })->name('checkout.store');
 
-Route::get('/orders', function () {
-    return view('buyer.orders.index');
-})->name('buyer.orders.index');
-
 Route::get('/api/world/states/{countryCode}', function (string $countryCode) {
     $states = \Imujas9\World\Facades\State::where('country_code', strtoupper($countryCode))->get(['name', 'code']);
     return response()->json($states);
@@ -136,7 +132,6 @@ Route::get('/api/world/states/{countryCode}', function (string $countryCode) {
 Route::middleware(['auth', 'verified', 'security_policy', 'legal_acceptance'])->group(function () {
     Route::get('/kyc/onboarding', [\App\Http\Controllers\Auth\KycOnboardingController::class, 'show'])->name('kyc.onboarding');
     Route::post('/kyc/onboarding', [\App\Http\Controllers\Auth\KycOnboardingController::class, 'store'])->name('kyc.onboarding.store');
-    Route::get('/exporter/onboarding', [\App\Http\Controllers\Auth\KycOnboardingController::class, 'show'])->name('exporter.onboarding');
 });
 
 Route::middleware(['auth', 'verified', 'security_policy', 'legal_acceptance', 'buyer_profile_completed'])->group(function () {
@@ -153,6 +148,11 @@ Route::middleware(['auth', 'verified', 'security_policy', 'legal_acceptance', 'b
 
         // All Categories
         Route::get('/categories', [\App\Http\Controllers\Buyer\ProductController::class, 'categories'])->name('buyer.categories.index');
+
+        // Orders Index
+        Route::get('/orders', function () {
+            return view('buyer.orders.index');
+        })->name('buyer.orders.index');
 
         // Order Tracking
         Route::get('/orders/{reference}/track', [\App\Http\Controllers\Buyer\OrderController::class, 'track'])->name('buyer.orders.track');
@@ -186,6 +186,9 @@ Route::middleware(['auth', 'verified', 'security_policy', 'kyc_completed', 'lega
 
         Route::get('/profile', [\App\Http\Controllers\Seller\ProfileController::class, 'show'])->name('seller.profile.show');
         Route::post('/profile', [\App\Http\Controllers\Seller\ProfileController::class, 'update'])->name('seller.profile.update');
+
+        Route::get('/become-an-exporter', [\App\Http\Controllers\ExporterOnboardingController::class, 'show'])->name('exporter.onboarding');
+        Route::post('/become-an-exporter', [\App\Http\Controllers\ExporterOnboardingController::class, 'store'])->name('exporter.onboarding.store');
     });
 
     Route::prefix('logistics')->group(function () {

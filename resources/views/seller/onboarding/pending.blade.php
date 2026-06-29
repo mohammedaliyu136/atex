@@ -2,12 +2,6 @@
 
 @section('content')
 <div class="max-w-3xl mx-auto py-12 px-4 text-center" x-data="{ showDetails: false }">
-    @if(session('success'))
-        <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl mb-8 flex items-center justify-center max-w-lg mx-auto">
-            <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i>
-            {{ session('success') }}
-        </div>
-    @endif
 
     <div class="w-24 h-24 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-6 border-8 border-amber-50/50">
         <i data-lucide="clock" class="w-10 h-10"></i>

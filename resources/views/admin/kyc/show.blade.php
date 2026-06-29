@@ -10,7 +10,7 @@
 
     $kycLabel = match ($type) {
         'buyer' => 'Buyer',
-        'seller' => 'Local Seller',
+        'seller' => 'Seller',
         'export' => 'Exporter',
         'logistics' => 'Logistics',
         'admin' => 'Admin',

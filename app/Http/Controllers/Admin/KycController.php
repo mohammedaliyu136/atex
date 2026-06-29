@@ -133,7 +133,7 @@ class KycController extends Controller
                 };
 
                 $labels = [
-                    'seller' => 'Local Seller',
+                    'seller' => 'Seller',
                     'export' => 'Exporter',
                     'buyer' => 'Buyer',
                     'logistics' => 'Logistics',

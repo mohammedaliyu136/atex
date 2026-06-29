@@ -137,8 +137,8 @@
                     $dashboardRoute = 'admin.dashboard';
                     $profileRoute = 'admin.profile';
                     if (Auth::user()->hasRole('seller')) {
-                        $dashboardRoute = 'seller.dashboard';
-                        $profileRoute = 'seller.profile.show';
+                        $dashboardRoute = 'buyer.dashboard';
+                        $profileRoute = 'buyer.profile.show';
                     } elseif (Auth::user()->hasRole('buyer')) {
                         $dashboardRoute = 'buyer.dashboard';
                         $profileRoute = 'buyer.profile.show';
@@ -147,6 +147,9 @@
                     }
                 @endphp
                 <a href="{{ route($dashboardRoute) }}">📊 Dashboard</a>
+                @if(Auth::user()->hasRole('seller'))
+                  <a href="{{ route('seller.dashboard') }}">🏪 My Store</a>
+                @endif
                 <a href="{{ route($profileRoute) }}">👤 My Profile</a>
                 @if(Auth::user()->hasRole('buyer'))
                   <a href="{{ route('buyer.orders.index') }}">📦 My Orders</a>
